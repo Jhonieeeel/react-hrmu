@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\LeaveController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Pages
     Route::get("leaves", [LeaveController::class, 'index'])->name('leaves.index');
     Route::get("leaves/{user}", [leaveController::class, 'show'])->name('leaves.show');
+    Route::get("calendar", [CalendarController::class, 'index'])->name('calendar.index');
 
     // data
     Route::get("/data/leaves", [LeaveController::class, "filing"])->name('leaves.data');

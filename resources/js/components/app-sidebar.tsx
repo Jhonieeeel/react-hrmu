@@ -25,6 +25,7 @@ import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 import leaves from '@/routes/leaves';
 import OCD from '../../../public/ocd_logo.svg';
+import calendar from '@/routes/calendar';
 
 const mainNavItems: NavItem[] = [
     {
@@ -39,7 +40,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Calendar',
-        href: '',
+        href: calendar.index(),
         icon: CalendarClock,
     },
     {
