@@ -6,6 +6,11 @@ import LeaveForm from '@/components/Leave/LeaveForm';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
 import UndertimeForm from '@/components/Leave/UndertimeForm';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import getUserBalanceOption from '@/queries/fetchUserBalance';
 import leaves from '@/routes/leaves';
@@ -13,6 +18,7 @@ import { User } from '@/types';
 import { Head } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
+    ArrowDown,
     NotebookPen,
     Plane,
     Scale,
@@ -32,6 +38,9 @@ export default function UserBalance({ user }: PageProp) {
     });
 
     const [page, setPage] = useState(1);
+
+    const [openLeave, setOpenLeave] = useState(false);
+    const [openUndertime, setOpenUndertime] = useState(false);
 
     function handleFilter(key: 'month' | 'year', value: string) {
         setDate((prev) => ({
@@ -112,24 +121,41 @@ export default function UserBalance({ user }: PageProp) {
                             </>
                         )}
                     </TabsContent>
-                    <TabsContent
-                        value="form"
-                        className="grid grid-cols-2 gap-4"
-                    >
-                        <div className="col-span-2 w-full rounded-lg border bg-background/20 p-8 shadow-md md:col-span-1 dark:border-accent/40">
-                            <h1 className="mb-4 inline-flex items-center gap-2 text-2xl font-semibold dark:text-accent">
-                                <Plane />
-                                Leave Form
-                            </h1>
-                            <LeaveForm user={user} />
-                        </div>
-                        <div className="col-span-2 w-full rounded-lg border bg-background/20 p-8 shadow-md md:col-span-1 dark:border-accent/40">
-                            <h1 className="mb-4 inline-flex items-center gap-2 text-2xl font-semibold dark:text-accent">
-                                <TimerOffIcon />
-                                Undertime Form
-                            </h1>
-                            <UndertimeForm user={user} />
-                        </div>
+
+                    {/* Form */}
+                    <TabsContent value="form">
+                        <Collapsible
+                            className={`max-w-5xl rounded-lg bg-background/20 p-8 ${openLeave ? 'border shadow-md' : ''} md:col-span-1 dark:border-accent/40`}
+                            open={openLeave}
+                            onOpenChange={setOpenLeave}
+                        >
+                            <CollapsibleTrigger>
+                                <h1 className="mb-4 inline-flex items-center gap-2 text-2xl font-semibold dark:text-accent">
+                                    <Plane />
+                                    Leave Form
+                                </h1>
+                                <ArrowDown />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <LeaveForm user={user} />
+                            </CollapsibleContent>
+                        </Collapsible>
+
+                        <Collapsible
+                            className={`max-w-5xl rounded-lg bg-background/20 p-8 ${openUndertime ? 'border shadow-md' : ''} md:col-span-1 dark:border-accent/40`}
+                            open={openUndertime}
+                            onOpenChange={setOpenUndertime}
+                        >
+                            <CollapsibleTrigger>
+                                <h1 className="mb-4 inline-flex items-center gap-2 text-2xl font-semibold dark:text-accent">
+                                    <TimerOffIcon />
+                                    Undertime Form
+                                </h1>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <UndertimeForm user={user} />
+                            </CollapsibleContent>
+                        </Collapsible>
                     </TabsContent>
                 </Tabs>
             </div>

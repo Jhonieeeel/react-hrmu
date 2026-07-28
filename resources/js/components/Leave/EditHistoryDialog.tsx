@@ -25,7 +25,7 @@ type FilingProp = {
     leave: Leave;
 };
 
-export function FilingDialog({ children, leave }: FilingProp) {
+export function EditHistoryDialog({ children, leave }: FilingProp) {
     const form = useForm({
         id: leave?.id,
         status: leave?.status,
@@ -53,7 +53,7 @@ export function FilingDialog({ children, leave }: FilingProp) {
             <DialogContent className="sm:max-w-sm">
                 <form onSubmit={handleSubmit} className="space-y-3">
                     <DialogHeader>
-                        <DialogTitle>Edit profile</DialogTitle>
+                        <DialogTitle>Edit Balance</DialogTitle>
                         <DialogDescription>
                             Make changes to your profile here. Click save when
                             you&apos;re done.

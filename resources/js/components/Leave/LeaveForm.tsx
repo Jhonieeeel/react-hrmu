@@ -1,11 +1,17 @@
-import { useForm } from '@inertiajs/react';
-import { Field, FieldGroup, FieldLabel, FieldSet } from '../ui/field';
-import DatePicker from './DatePicker';
-import { event_types } from './constants/constants';
 import { User } from '@/types';
-import SelectCombobox from './SelectCombobox';
+import { useForm } from '@inertiajs/react';
+import { Button } from '../ui/button';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldSet,
+} from '../ui/field';
 import { Input } from '../ui/input';
-import { Button } from '@base-ui/react';
+import DatePicker from './DatePicker';
+import SelectCombobox from './SelectCombobox';
+import { event_types } from './constants/constants';
 
 type FormProp = {
     user: User;
@@ -13,10 +19,29 @@ type FormProp = {
 
 export default function LeaveForm({ user }: FormProp) {
     const form = useForm({
+        user_id: user?.id,
+        event_type: '',
+        event_tag: '',
+        balance: 0,
         leave_type: '',
         starts_at: '',
         ends_at: '',
     });
+
+    function handleClear() {
+        form.setData({
+            ...form.data,
+            leave_type: '',
+            starts_at: '',
+            ends_at: '',
+        });
+    }
+
+    function handleSubmit(e: React.SubmitEvent) {
+        e.preventDefault();
+
+        form.submit();
+    }
 
     return (
         <FieldSet>
@@ -46,6 +71,7 @@ export default function LeaveForm({ user }: FormProp) {
                         }
                         placeholder="Select leave type"
                     />
+                    <FieldError>{form.errors.leave_type}</FieldError>
                 </Field>
             </FieldGroup>
             {/* Date */}
@@ -62,6 +88,7 @@ export default function LeaveForm({ user }: FormProp) {
                                 form.setData('ends_at', date);
                             }}
                         />
+                        <FieldError>{form.errors.starts_at}</FieldError>
                     </Field>
                     <Field>
                         <FieldLabel>Ending Date</FieldLabel>
@@ -73,6 +100,7 @@ export default function LeaveForm({ user }: FormProp) {
                                 form.setData('ends_at', date);
                             }}
                         />
+                        <FieldError>{form.errors.ends_at}</FieldError>
                     </Field>
                 </div>
             </FieldGroup>
@@ -83,6 +111,7 @@ export default function LeaveForm({ user }: FormProp) {
                         <Button
                             type="button"
                             variant="outline"
+                            onClick={handleClear}
                             className="h-9 px-3 transition-colors hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
                         >
                             Clear
