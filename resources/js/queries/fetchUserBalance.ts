@@ -1,4 +1,3 @@
-import { userBalance } from '@/actions/App/Http/Controllers/LeaveController';
 import leaves from '@/routes/leaves';
 import { queryOptions } from '@tanstack/react-query';
 import axios from 'axios';
@@ -11,6 +10,8 @@ export default function getUserBalanceOption(
     return queryOptions({
         queryKey: ['leaves', month, year, user_id],
         queryFn: () => getUserBalance(month, year, user_id),
+        staleTime: 1000 ^ 60,
+        refetchOnWindowFocus: false,
     });
 }
 

@@ -9,12 +9,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Field, FieldGroup } from '@/components/ui/field';
+import { Field, FieldError, FieldGroup } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import { Leave } from '@/types';
 import { Check, X } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Textarea } from '../ui/textarea';
+import { useForm } from '@inertiajs/react';
+import leaves from '@/routes/leaves';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 type FilingProp = {
     children: React.ReactNode;
@@ -22,11 +26,32 @@ type FilingProp = {
 };
 
 export function FilingDialog({ children, leave }: FilingProp) {
+    const form = useForm({
+        id: leave?.id,
+        status: leave?.status,
+        remarks: '',
+    });
+
+    const queryClient = useQueryClient();
+
+    function handleSubmit(e: React.SubmitEvent) {
+        e.preventDefault();
+
+        form.submit(leaves.update(form.data.id), {
+            onSuccess: () => {
+                form.reset();
+                queryClient.invalidateQueries({
+                    queryKey: ['leaves'],
+                });
+            },
+        });
+    }
+
     return (
         <Dialog>
-            <form>
-                <DialogTrigger asChild>{children}</DialogTrigger>
-                <DialogContent className="sm:max-w-sm">
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit} className="space-y-3">
                     <DialogHeader>
                         <DialogTitle>Edit profile</DialogTitle>
                         <DialogDescription>
@@ -40,11 +65,17 @@ export function FilingDialog({ children, leave }: FilingProp) {
                             <ToggleGroup
                                 type="single"
                                 value={
-                                    leave?.status ? 'completed' : 'incomplete'
+                                    form.data.status
+                                        ? 'completed'
+                                        : 'incomplete'
                                 }
-                                // onValueChange={(value) =>
-                                //     value && form.setData('event_tag', value)
-                                // }
+                                onValueChange={(value) => {
+                                    if (!value) return;
+                                    form.setData(
+                                        'status',
+                                        value === 'completed',
+                                    );
+                                }}
                                 className="grid grid-cols-2 gap-3"
                             >
                                 <ToggleGroupItem
@@ -67,10 +98,22 @@ export function FilingDialog({ children, leave }: FilingProp) {
                                     </span>
                                 </ToggleGroupItem>
                             </ToggleGroup>
+                            <FieldError className="text-red-700 dark:text-red-300">
+                                {form.errors.status}
+                            </FieldError>
                         </Field>
                         <Field>
                             <Label htmlFor="remarks">Remarks</Label>
-                            <Textarea placeholder="Type your message here." />
+                            <Textarea
+                                onChange={(e) => {
+                                    form.setData('remarks', e.target.value);
+                                }}
+                                placeholder="Type your message here."
+                            />
+
+                            <FieldError className="text-red-700 dark:text-red-300">
+                                {form.errors.remarks}
+                            </FieldError>
                         </Field>
                     </FieldGroup>
                     <DialogFooter>
@@ -79,8 +122,8 @@ export function FilingDialog({ children, leave }: FilingProp) {
                         </DialogClose>
                         <Button type="submit">Save changes</Button>
                     </DialogFooter>
-                </DialogContent>
-            </form>
+                </form>
+            </DialogContent>
         </Dialog>
     );
 }

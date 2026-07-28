@@ -45,3 +45,38 @@ export type DataResponse<T> = {
     to: number;
     total: number;
 };
+
+export type EventProp = {
+    id: number;
+    title: string;
+    end: Temporal.PlainDate;
+    start: Temporal.PlainDate;
+    user_id: number;
+    user: User;
+    status: boolean;
+    calendarTitle: string;
+    calendarId: string;
+};
+
+export type CalendarEvent = {
+    id: string;
+    title: string;
+    start: string;
+    end: string;
+    user: User;
+    user_id: number;
+    status: boolean;
+    calendarTitle: string;
+    calendarTheme: {
+        lightColors: {
+            main: string;
+            container: string;
+            onContainer: string;
+        };
+        darkColors: {
+            main: string;
+            container: string;
+            onContainer: string;
+        };
+    };
+};

@@ -68,6 +68,47 @@
 }
 
 :root {
+    /* calendar */
+    --sx-color-primary: var(--primary);
+    --sx-color-on-primary: var(--primary-foreground);
+    --sx-color-primary-container: var(--muted);
+    --sx-color-on-primary-container: var(--accent);
+
+    --sx-color-secondary: var(--secondary);
+    --sx-color-on-secondary: var(--secondary-foreground);
+    --sx-color-secondary-container: var(--muted);
+    --sx-color-on-secondary-container: var(--foreground);
+
+    --sx-color-tertiary: var(--accent);
+    --sx-color-on-tertiary: var(--accent-foreground);
+    --sx-color-tertiary-container: var(--muted);
+    --sx-color-on-tertiary-container: var(--foreground);
+
+    --sx-color-surface: var(--card);
+    --sx-color-surface-dim: var(--muted);
+    --sx-color-surface-bright: var(--card);
+    --sx-color-on-surface: var(--card-foreground);
+    --sx-color-surface-container: var(--card);
+    --sx-color-surface-container-low: var(--background);
+    --sx-color-surface-container-high: var(--muted);
+
+    --sx-color-background: var(--background);
+    --sx-color-on-background: var(--foreground);
+
+    --sx-color-outline: var(--border);
+    --sx-color-outline-variant: var(--border);
+    --sx-color-shadow: oklch(0 0 0);
+    --sx-color-surface-tint: var(--primary);
+
+    --sx-color-neutral: var(--sx-color-outline);
+    --sx-color-neutral-variant: var(--sx-color-outline-variant);
+
+    /* internally defined colors, not part of the material design spec */
+    --sx-internal-color-gray-ripple-background: var(--muted);
+    --sx-internal-color-light-gray: var(--muted);
+    --sx-internal-color-text: var(--foreground);
+    /* calendar end */
+
     --background: oklch(0.985 0 89.876);
     --foreground: oklch(0.264 0.087 275.982);
 
@@ -160,6 +201,17 @@
     --sidebar-accent-foreground: oklch(0.985 0 89.876);
     --sidebar-border: oklch(0.338 0.086 278.115);
     --sidebar-ring: oklch(0.722 0.171 53.919);
+}
+
+/* .sx-react-calendar-wrapper {
+    width: 100%;
+    max-width: 100vw;
+    height: 800px;
+    max-height: 90vh;
+} */
+
+.sx-react-calendar-wrapper {
+    @apply h-200 max-h-[90vh] w-full max-w-[100vw];
 }
 
 @layer base {

@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Actions\Calendar\CalendarTransactionsAction;
+use App\Models\User;
 
 class CalendarController extends Controller
 {
-    public function index(CalendarTransactionsAction $calendarAction)
+    public function index()
     {
-        $calendarEvents = $calendarAction();
+        return Inertia::render("Calendar/index", ['users' => User::all()]);
+    }
 
-        return Inertia::render("Calendar/index", ['calendarEvents' => $calendarEvents]);
+    public function calendarEvents(CalendarTransactionsAction $calendarAction)
+    {
+        return response()->json($calendarAction());
     }
 }

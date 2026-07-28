@@ -1,3 +1,4 @@
+import AccrualButton from '@/components/Leave/AccrualButton';
 import BalanceCard from '@/components/Leave/BalanceCard';
 import { HistoryColumns } from '@/components/Leave/columns/HistoryColumn';
 import FilterButton from '@/components/Leave/FilterButton';
@@ -53,7 +54,10 @@ export default function UserBalance({ user }: PageProp) {
                             {user.name}
                         </h1>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-3">
+                        {userData?.hasAccrual && (
+                            <AccrualButton filters={date} user_id={user?.id} />
+                        )}
                         <FilterButton handleFilter={handleFilter} date={date} />
                     </div>
                 </div>

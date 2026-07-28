@@ -51,6 +51,7 @@ export const FilingColumns: ColumnDef<Leave>[] = [
         id: 'actions',
         cell: ({ row }) => {
             const user = row.original.user;
+            const leave = row.original;
 
             return (
                 <DropdownMenu>
@@ -62,7 +63,7 @@ export const FilingColumns: ColumnDef<Leave>[] = [
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <FilingDialog>
+                        <FilingDialog leave={leave}>
                             <DropdownMenuItem
                                 onSelect={(e) => e.preventDefault()}
                             >

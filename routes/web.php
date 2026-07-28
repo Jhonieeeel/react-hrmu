@@ -14,9 +14,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get("leaves/{user}", [leaveController::class, 'show'])->name('leaves.show');
     Route::get("calendar", [CalendarController::class, 'index'])->name('calendar.index');
 
+    // HTTP Requests
+    Route::put("leaves/{leave}/update", [LeaveController::class, 'update'])->name('leaves.update');
+
     // data
-    Route::get("/data/leaves", [LeaveController::class, "filing"])->name('leaves.data');
-    Route::get("/data/{user}/balance", [LeaveController::class, "userBalance"])->name("leaves.balance");
+    Route::get("data/leaves", [LeaveController::class, "filing"])->name('leaves.data');
+    Route::get("data/{user}/balance", [LeaveController::class, "userBalance"])->name("leaves.balance");
+    Route::get("data/calendar", [CalendarController::class, 'calendarEvents'])->name('calendar.data');
 });
 
 require __DIR__ . '/settings.php';

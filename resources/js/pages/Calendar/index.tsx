@@ -1,9 +1,15 @@
 import AddHolidayDialog from '@/components/Calendar/AddHolidayDialog';
+import LeaveCalendar from '@/components/Calendar/LeaveCalendar';
 import calendar from '@/routes/calendar';
+import { User } from '@/types';
 import { Button } from '@base-ui/react';
 import { Head } from '@inertiajs/react';
 
-export default function Calendar() {
+type PageProps = {
+    users: User;
+};
+
+export default function Calendar({ users }: PageProps) {
     return (
         <>
             <Head title="Calendar" />
@@ -22,6 +28,7 @@ export default function Calendar() {
                 </div>
                 <div className="relative min-h-screen flex-1 space-y-4 overflow-hidden rounded-xl border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
                     {/* Calendar Here */}
+                    <LeaveCalendar users={users} />
                 </div>
             </div>
         </>
