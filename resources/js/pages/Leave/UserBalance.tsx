@@ -50,8 +50,12 @@ export default function UserBalance({ user }: PageProp) {
     }
 
     const { data: userData, isFetching } = useQuery(
-        getUserBalanceOption(date.month, date.year, user.id),
+        getUserBalanceOption(date.month, date.year, user.id, page),
     );
+
+    const transactions = userData?.transactions;
+
+    console.log(transactions);
 
     return (
         <>
@@ -103,23 +107,19 @@ export default function UserBalance({ user }: PageProp) {
 
                     {/* History */}
                     <TabsContent value="table" className="space-y-4">
-                        {userData?.transactions && (
-                            <>
-                                <DataTable
-                                    data={userData.transactions.data}
-                                    columns={HistoryColumns}
-                                />
+                        <>
+                            <DataTable
+                                data={transactions?.data}
+                                columns={HistoryColumns}
+                            />
 
-                                <PaginationButton
-                                    currentPage={
-                                        userData.transactions.current_page
-                                    }
-                                    lastPage={userData.transactions.last_page}
-                                    onPageChange={setPage}
-                                    isLoading={isFetching}
-                                />
-                            </>
-                        )}
+                            <PaginationButton
+                                currentPage={transactions?.current_page ?? 1}
+                                lastPage={transactions?.last_page ?? 1}
+                                onPageChange={setPage}
+                                isLoading={isFetching}
+                            />
+                        </>
                     </TabsContent>
 
                     {/* Form */}
@@ -129,12 +129,11 @@ export default function UserBalance({ user }: PageProp) {
                             open={openLeave}
                             onOpenChange={setOpenLeave}
                         >
-                            <CollapsibleTrigger>
+                            <CollapsibleTrigger className="flex items-center gap-2">
                                 <h1 className="mb-4 inline-flex items-center gap-2 text-2xl font-semibold dark:text-accent">
                                     <Plane />
                                     Leave Form
                                 </h1>
-                                <ArrowDown />
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                                 <LeaveForm user={user} />

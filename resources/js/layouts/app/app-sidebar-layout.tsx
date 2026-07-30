@@ -16,9 +16,9 @@ export default function AppSidebarLayout({
             <AppContent variant="sidebar" className="overflow-x-hidden">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
-                <footer className="h-36 bg-foreground">
+                {/* <footer className="h-36 bg-foreground">
                     <Pilipinas className="size-32 fill-white" />
-                </footer>
+                </footer> */}
             </AppContent>
         </AppShell>
     );

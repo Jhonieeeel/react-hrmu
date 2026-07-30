@@ -15,6 +15,9 @@ import { isBefore, parseISO } from 'date-fns';
 import { event_types } from '../Leave/constants/constants';
 import DatePicker from '../Leave/DatePicker';
 import SelectCombobox from '../Leave/SelectCombobox';
+import leaves from '@/routes/leaves';
+import { queryClient } from '@/queries/fetchUserBalance';
+import { useQueryClient } from '@tanstack/react-query';
 
 type DialogFormProps = {
     open: boolean;
@@ -33,36 +36,41 @@ export default function LeaveFormDialog({
         user_id: 0,
         leave_type: '',
         event_type: 'deduction',
-        event_tag: '',
+        event_tag: 'leave',
         starts_at: date,
         ends_at: date,
         balance: 0,
     });
 
+    const queryClient = useQueryClient();
+
     function handleSubmit(e: React.SubmitEvent) {
         e.preventDefault();
 
-        // const startDate = parseISO(form.data.starts_at);
-        // const endDate = parseISO(form.data.ends_at);
+        const startDate = parseISO(form.data.starts_at);
+        const endDate = parseISO(form.data.ends_at);
 
-        // if (isBefore(endDate, startDate)) {
-        //     form.setError('ends_at', 'End date cannot be before start date');
-        //     return;
-        // }
+        if (isBefore(endDate, startDate)) {
+            form.setError('ends_at', 'End date cannot be before start date');
+            return;
+        }
 
-        // form.transform((data) => ({
-        //     ...data,
-        //     event_tag: ['cto', 'offset'].includes(form.data.leave_type)
-        //         ? 'cto'
-        //         : 'leave',
-        // }));
+        form.transform((data) => ({
+            ...data,
+            event_tag: ['cto', 'offset'].includes(form.data.leave_type)
+                ? 'cto'
+                : 'leave',
+        }));
 
-        // form.submit(leave.store(), {
-        //     onSuccess: () => {
-        //         form.reset();
-        //         onOpenChange(false);
-        //     },
-        // });
+        form.submit(leaves.store(), {
+            onSuccess: () => {
+                form.reset();
+                onOpenChange(false);
+                queryClient.invalidateQueries({
+                    queryKey: ['calendarEvents'],
+                });
+            },
+        });
     }
 
     return (
@@ -103,9 +111,17 @@ export default function LeaveFormDialog({
                                     label: u.leave_type,
                                 }))}
                                 value={form.data.leave_type}
-                                onValueChange={(value: Leave['leave_type']) =>
-                                    form.setData('leave_type', value)
-                                }
+                                onValueChange={(value: string) => {
+                                    form.setData('leave_type', value);
+                                    if (
+                                        String(value).toLowerCase() ===
+                                        'force leave'
+                                    )
+                                        form.setData(
+                                            'event_tag',
+                                            'vacation leave',
+                                        );
+                                }}
                                 placeholder="Select leave type"
                             />
                         </Field>

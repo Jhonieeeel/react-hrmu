@@ -69,10 +69,20 @@ export function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <img src={OCD} className="size-12" alt="" />
-                                Office of Civil Defense
+                        <SidebarMenuButton size="4xl" asChild>
+                            <Link
+                                href={dashboard()}
+                                className="flex flex-col justify-center"
+                                prefetch
+                            >
+                                <img
+                                    src={OCD}
+                                    className="w-sm:size-14 size-28"
+                                    alt=""
+                                />
+                                <span className="hidden:w-sm">
+                                    Office of Civil Defense
+                                </span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

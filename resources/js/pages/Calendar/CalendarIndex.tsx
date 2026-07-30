@@ -2,14 +2,13 @@ import AddHolidayDialog from '@/components/Calendar/AddHolidayDialog';
 import LeaveCalendar from '@/components/Calendar/LeaveCalendar';
 import calendar from '@/routes/calendar';
 import { User } from '@/types';
-import { Button } from '@base-ui/react';
 import { Head } from '@inertiajs/react';
 
 type PageProps = {
     users: User;
 };
 
-export default function Calendar({ users }: PageProps) {
+export default function CalendarIndex({ users }: PageProps) {
     return (
         <>
             <Head title="Calendar" />
@@ -35,7 +34,7 @@ export default function Calendar({ users }: PageProps) {
     );
 }
 
-Calendar.layout = {
+CalendarIndex.layout = {
     breadcrumbs: [
         {
             title: 'Calendar',

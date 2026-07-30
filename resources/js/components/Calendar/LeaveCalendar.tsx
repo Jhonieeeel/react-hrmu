@@ -23,8 +23,6 @@ export default function LeaveCalendar({ users }: PageProps) {
         getCalendarEventsOption(),
     );
 
-    console.log(users);
-
     const eventService = useState(() => createEventsServicePlugin())[0];
 
     const [open, setOpen] = useState(false);

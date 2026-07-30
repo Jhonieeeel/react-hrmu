@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Leave\CheckDateRangeAction;
 use App\Actions\Leave\HasAccrualAction;
 use App\Actions\Leave\LeaveHistoryAction;
 use App\Actions\Leave\ReplayBalanceAction;
+use App\Actions\Leave\CreateLeaveAction;
 use App\Actions\Leave\UsersFilingAction;
+use App\Data\LeaveDTO;
 use App\Models\Leave;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -16,6 +19,15 @@ class LeaveController extends Controller
     public function index()
     {
         return Inertia::render("Leave/index");
+    }
+
+     public function store(Request $request, LeaveDTO $leaveData, CreateLeaveAction $action, CheckDateRangeAction $checkDateRangeAction )
+    {
+        $weekdays = $checkDateRangeAction->checkDateRange($leaveData);
+
+        $action->createLeaves($weekdays, $leaveData);
+
+        return back()->with('message', 'Filed Leave Successfully');
     }
 
     public function show(User $user)

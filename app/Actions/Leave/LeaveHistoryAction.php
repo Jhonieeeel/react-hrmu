@@ -16,7 +16,8 @@ class LeaveHistoryAction
             : Carbon::create(now()->year, now()->month, 1);
 
         return Leave::where('user_id', $user->id)
-            ->whereNotIn('leave_type', ['monthly filing'])
+            ->whereNot('leave_type', 'monthly filing')
+            ->whereIn('event_type', ['accrual', 'deduction'])
             ->whereMonth('starts_at', $date->copy()->month)
             ->whereYear('starts_at', $date->copy()->year)
             ->paginate(5)
