@@ -34,6 +34,7 @@ import {
 
 import { FilingDialog } from '../FilingDialog';
 import { EditHistoryDialog } from '../EditHistoryDialog';
+import { useState } from 'react';
 
 const badgeType: Record<string, LucideIcon> = {
     'vacation leave': Plane,
@@ -170,30 +171,41 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
                 leave.event_tag,
             );
 
+            const [open, setOpen] = useState(false);
+
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {leave.event_type === 'deduction' && (
-                            <EditHistoryDialog leave={leave}>
+                <>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {leave.event_type === 'deduction' && (
                                 <DropdownMenuItem
-                                    onSelect={(e) => e.preventDefault()}
+                                    onSelect={(e) => {
+                                        e.preventDefault();
+                                        setOpen(true);
+                                    }}
                                 >
                                     Edit
                                 </DropdownMenuItem>
-                            </EditHistoryDialog>
-                        )}
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                            )}
+                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                        </DropdownMenuContent>
+                        <EditHistoryDialog
+                            open={open}
+                            onOpenChange={setOpen}
+                            leave={leave}
+                        />
+                    </DropdownMenu>
+                    {/* Dialog */}
+                </>
             );
         },
     },

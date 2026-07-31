@@ -64,7 +64,6 @@ export default function DatePicker({
                     captionLayout="dropdown"
                     onSelect={(date) => {
                         onChange(date ? format(date, 'yyyy-MM-dd') : '');
-
                         setOpen(false);
                     }}
                 />

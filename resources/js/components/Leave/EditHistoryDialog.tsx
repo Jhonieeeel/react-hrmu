@@ -9,7 +9,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Field, FieldError, FieldGroup } from '@/components/ui/field';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import { Leave } from '@/types';
 import { Check, X } from 'lucide-react';
@@ -19,17 +24,27 @@ import { useForm } from '@inertiajs/react';
 import leaves from '@/routes/leaves';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import SelectCombobox from './SelectCombobox';
+import { event_types } from './constants/constants';
+import DatePicker from './DatePicker';
 
 type FilingProp = {
-    children: React.ReactNode;
     leave: Leave;
+    open: boolean;
+    onOpenChange: (value: boolean) => void;
 };
 
-export function EditHistoryDialog({ children, leave }: FilingProp) {
+export function EditHistoryDialog({ leave, open, onOpenChange }: FilingProp) {
     const form = useForm({
         id: leave?.id,
+        user_id: leave?.user_id,
+        leave_type: leave?.leave_type,
+        event_type: leave?.event_type,
+        event_tag: leave?.event_tag,
+        balance: 0,
+        starts_at: leave?.starts_at,
+        ends_at: leave?.ends_at,
         status: leave?.status,
-        remarks: '',
     });
 
     const queryClient = useQueryClient();
@@ -48,8 +63,7 @@ export function EditHistoryDialog({ children, leave }: FilingProp) {
     }
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+        <Dialog modal={false} open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-sm">
                 <form onSubmit={handleSubmit} className="space-y-3">
                     <DialogHeader>
@@ -61,59 +75,56 @@ export function EditHistoryDialog({ children, leave }: FilingProp) {
                     </DialogHeader>
                     <FieldGroup>
                         <Field>
-                            <Label htmlFor="status">Filing Status</Label>
-                            <ToggleGroup
-                                type="single"
-                                value={
-                                    form.data.status
-                                        ? 'completed'
-                                        : 'incomplete'
-                                }
-                                onValueChange={(value) => {
-                                    if (!value) return;
-                                    form.setData(
-                                        'status',
-                                        value === 'completed',
-                                    );
+                            <Label htmlFor="status">Leave Type</Label>
+                            <SelectCombobox
+                                items={event_types.map((event) => ({
+                                    value: event.leave_type.toLowerCase(),
+                                    label: event.leave_type,
+                                }))}
+                                value={form.data.leave_type}
+                                onValueChange={(value: string) => {
+                                    form.setData('leave_type', value);
+                                    if (
+                                        String(value).toLowerCase() ===
+                                        'force leave'
+                                    )
+                                        form.setData(
+                                            'event_tag',
+                                            'vacation leave',
+                                        );
                                 }}
-                                className="grid grid-cols-2 gap-3"
-                            >
-                                <ToggleGroupItem
-                                    value={'completed'}
-                                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 text-emerald-600 transition-all duration-300 hover:border-emerald-500/60 hover:bg-emerald-500/10 data-[state=on]:scale-[1.02] data-[state=on]:border-emerald-500 data-[state=on]:bg-emerald-500 data-[state=on]:text-white data-[state=on]:shadow-lg dark:text-emerald-400 dark:data-[state=on]:text-white"
-                                >
-                                    <Check className="size-4" />
-                                    <span className="font-medium">
-                                        Completed
-                                    </span>
-                                </ToggleGroupItem>
-
-                                <ToggleGroupItem
-                                    value="incomplete"
-                                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-destructive/30 text-destructive transition-all duration-300 hover:border-destructive/60 hover:bg-destructive/10 data-[state=on]:scale-[1.02] data-[state=on]:border-destructive data-[state=on]:bg-destructive data-[state=on]:text-destructive-foreground data-[state=on]:shadow-lg"
-                                >
-                                    <X className="size-4" />
-                                    <span className="font-medium">
-                                        Incomplete
-                                    </span>
-                                </ToggleGroupItem>
-                            </ToggleGroup>
+                                placeholder="Select leave type"
+                            />
                             <FieldError className="text-red-700 dark:text-red-300">
-                                {form.errors.status}
+                                {form.errors.leave_type}
                             </FieldError>
                         </Field>
+                    </FieldGroup>
+                    <FieldGroup>
                         <Field>
-                            <Label htmlFor="remarks">Remarks</Label>
-                            <Textarea
-                                onChange={(e) => {
-                                    form.setData('remarks', e.target.value);
+                            <FieldLabel>Starting Date</FieldLabel>
+                            <DatePicker
+                                value={form.data.starts_at}
+                                disabled={!form.data.leave_type}
+                                placeholder="Select date"
+                                onChange={(date) => {
+                                    form.setData('starts_at', date);
+                                    form.setData('ends_at', date);
                                 }}
-                                placeholder="Type your message here."
                             />
-
-                            <FieldError className="text-red-700 dark:text-red-300">
-                                {form.errors.remarks}
-                            </FieldError>
+                            <FieldError>{form.errors.starts_at}</FieldError>
+                        </Field>
+                        <Field>
+                            <FieldLabel>Ending Date</FieldLabel>
+                            <DatePicker
+                                value={form.data.ends_at}
+                                disabled={!form.data.leave_type}
+                                placeholder="Select date"
+                                onChange={(date) => {
+                                    form.setData('ends_at', date);
+                                }}
+                            />
+                            <FieldError>{form.errors.ends_at}</FieldError>
                         </Field>
                     </FieldGroup>
                     <DialogFooter>
