@@ -35,6 +35,8 @@ import {
 import { FilingDialog } from '../FilingDialog';
 import { EditHistoryDialog } from '../EditHistoryDialog';
 import { useState } from 'react';
+import { Link } from '@inertiajs/react';
+import leaves from '@/routes/leaves';
 
 const badgeType: Record<string, LucideIcon> = {
     'vacation leave': Plane,
@@ -186,25 +188,20 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {leave.event_type === 'deduction' && (
-                                <DropdownMenuItem
-                                    onSelect={(e) => {
-                                        e.preventDefault();
-                                        setOpen(true);
-                                    }}
-                                >
-                                    Edit
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        onClick={() => console.log('test')}
+                                        href={leaves.edit(leave)}
+                                        target="_blank'"
+                                    >
+                                        Edit
+                                    </Link>
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem>Delete</DropdownMenuItem>
                             <DropdownMenuSeparator />
                         </DropdownMenuContent>
-                        <EditHistoryDialog
-                            open={open}
-                            onOpenChange={setOpen}
-                            leave={leave}
-                        />
                     </DropdownMenu>
-                    {/* Dialog */}
                 </>
             );
         },

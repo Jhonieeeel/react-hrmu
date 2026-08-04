@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 
 class UndertimeController extends Controller
 {
-    public function store(LeaveDTO $dto, CreateUndertimeAction $action) {
+    public function store(LeaveDTO $dto, CreateUndertimeAction $action)
+    {
 
         $action($dto);
 

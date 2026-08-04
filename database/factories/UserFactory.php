@@ -14,7 +14,7 @@ class UserFactory extends Factory
 {
     public static function ocdEmployees()
     {
-        return  [
+        return [
             ['name' => 'Ray Francis Alingasa', 'email' => 'rayfrancis@ocd.com'],
             ['name' => 'Jenn Eric Borday', 'email' => 'jenneric@ocd.com'],
             ['name' => 'Ronald Anthony Briol', 'email' => 'ronaldanthony@ocd.com'],
@@ -71,5 +71,7 @@ class UserFactory extends Factory
     /**
      * Indicate that the model has two-factor authentication configured.
      */
-    public function withTwoFactor(): static {}
+    public function withTwoFactor(): static
+    {
+    }
 }

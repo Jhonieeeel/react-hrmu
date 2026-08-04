@@ -16,12 +16,12 @@ class CalendarTransactionsAction
             $date = Carbon::create($year, $holiday->month, $holiday->day)->format('Y-m-d');
 
             return [
-                'id'            => "holiday-{$holiday->id}",
-                'title'         => $holiday->holiday_name,
-                'start'         => $date,
-                'end'           => $date,
+                'id' => "holiday-{$holiday->id}",
+                'title' => $holiday->holiday_name,
+                'start' => $date,
+                'end' => $date,
                 'calendarTitle' => 'Holiday',
-                'calendarId'    => 'holiday',
+                'calendarId' => 'holiday',
             ];
         });
 
@@ -39,14 +39,14 @@ class CalendarTransactionsAction
             ->get()
             ->map(function ($leave) {
                 return [
-                    'id'            => (string) $leave->id,
-                    'user_id'       => $leave->user_id,
-                    'title'         => $leave->user->name,
-                    'start'         => Carbon::parse($leave->starts_at)->format('Y-m-d'),
-                    'end'           => Carbon::parse($leave->ends_at)->format('Y-m-d'),
-                    'user'          => $leave->user,
+                    'id' => (string) $leave->id,
+                    'user_id' => $leave->user_id,
+                    'title' => $leave->user->name,
+                    'start' => Carbon::parse($leave->starts_at)->format('Y-m-d'),
+                    'end' => Carbon::parse($leave->ends_at)->format('Y-m-d'),
+                    'user' => $leave->user,
                     'calendarTitle' => $leave->leave_type,
-                    'calendarId'    => $leave->leave_type,
+                    'calendarId' => $leave->leave_type,
                 ];
             });
 

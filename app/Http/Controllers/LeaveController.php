@@ -21,13 +21,19 @@ class LeaveController extends Controller
         return Inertia::render("Leave/index");
     }
 
-     public function store(Request $request, LeaveDTO $leaveData, CreateLeaveAction $action, CheckDateRangeAction $checkDateRangeAction )
+    public function store(Request $request, LeaveDTO $leaveData, CreateLeaveAction $action, CheckDateRangeAction $checkDateRangeAction)
     {
         $weekdays = $checkDateRangeAction->checkDateRange($leaveData);
 
         $action->createLeaves($weekdays, $leaveData);
 
         return back()->with('message', 'Filed Leave Successfully');
+    }
+
+    public function edit(Leave $leave)
+    {
+
+        return Inertia::render("Leave/EditLeaveForm", ['leave' => $leave]);
     }
 
     public function show(User $user)

@@ -47,7 +47,7 @@ class CheckDateRangeAction
             foreach ($period as $date) {
                 $key = "{$date->month}-{$date->day}";
 
-                if (! isset($holidayKeys[$key])) {
+                if (!isset($holidayKeys[$key])) {
                     $validatedDays[] = $date->toDateString();
                 }
             }
@@ -55,10 +55,12 @@ class CheckDateRangeAction
             return $this->splitIntoRanges($validatedDays);
         }
 
-        return [[
-            'starts_at' => Carbon::parse($leaveData->starts_at)->toDateString(),
-            'ends_at'   => Carbon::parse($leaveData->ends_at)->toDateString(),
-        ]];
+        return [
+            [
+                'starts_at' => Carbon::parse($leaveData->starts_at)->toDateString(),
+                'ends_at' => Carbon::parse($leaveData->ends_at)->toDateString(),
+            ]
+        ];
     }
 
 
@@ -86,7 +88,7 @@ class CheckDateRangeAction
 
             $ranges[] = [
                 'starts_at' => $start->toDateString(),
-                'ends_at'   => $end->toDateString(),
+                'ends_at' => $end->toDateString(),
             ];
 
             $start = $current;
@@ -95,7 +97,7 @@ class CheckDateRangeAction
 
         $ranges[] = [
             'starts_at' => $start->toDateString(),
-            'ends_at'   => $end->toDateString(),
+            'ends_at' => $end->toDateString(),
         ];
 
         return $ranges;

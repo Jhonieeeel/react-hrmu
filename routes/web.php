@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get("leaves", [LeaveController::class, 'index'])->name('leaves.index');
     Route::get("leaves/{user}", [leaveController::class, 'show'])->name('leaves.show');
     Route::get("calendar", [CalendarController::class, 'index'])->name('calendar.index');
+    Route::get("leaves/{leave}/edit", [LeaveController::class, 'edit'])->name('leaves.edit');
 
     // PUT / POST
     Route::put("leaves/{leave}/update", [LeaveController::class, 'update'])->name('leaves.update');

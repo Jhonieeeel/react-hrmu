@@ -74,7 +74,7 @@ class ReplayBalanceAction
         return $users->mapWithKeys(function (User $user) use ($allCurrent, $allPrevious, $date, $currentEvents) {
 
             $userCurrent = $allCurrent->get($user->id, collect());
-            $previous    = $allPrevious->get($user->id, collect());
+            $previous = $allPrevious->get($user->id, collect());
 
             $userCurrentEvents = $currentEvents->get($user->id, collect());
 
@@ -94,19 +94,21 @@ class ReplayBalanceAction
 
             $filing = $userCurrentEvents->where('leave_type', 'monthly filing')->first();
 
-            $deductionData    = self::deductionEvents($currentUndertime);
+            $deductionData = self::deductionEvents($currentUndertime);
             $leavesCollection = self::filedLeaves($currentFiledLeaves);
 
-            return [$user->id => [
-                'name'            => $user->name,
-                'balances'        => $newBalances,
-                'events'          => $deductionData['events'],
-                'undertimeCount'  => $deductionData['undertimeCount'],
-                'tardinessCount'  => $deductionData['tardinessCount'],
-                'leaves'          => $leavesCollection,
-                'filing'          => $filing->remarks ?? '',
-                'date'            => $date,
-            ]];
+            return [
+                $user->id => [
+                    'name' => $user->name,
+                    'balances' => $newBalances,
+                    'events' => $deductionData['events'],
+                    'undertimeCount' => $deductionData['undertimeCount'],
+                    'tardinessCount' => $deductionData['tardinessCount'],
+                    'leaves' => $leavesCollection,
+                    'filing' => $filing->remarks ?? '',
+                    'date' => $date,
+                ]
+            ];
         })->toArray();
     }
 
@@ -136,11 +138,11 @@ class ReplayBalanceAction
         $events = $currentUndertime->map(function ($event) {
 
             $startsAt = Carbon::parse($event->starts_at);
-            $endsAt   = Carbon::parse($event->ends_at);
+            $endsAt = Carbon::parse($event->ends_at);
 
             $diffMinutes = $startsAt->diffInMinutes($endsAt);
 
-            $hours   = intdiv($diffMinutes, 60);
+            $hours = intdiv($diffMinutes, 60);
             $minutes = $diffMinutes % 60;
 
             $durationParts = [];

@@ -55,8 +55,6 @@ export default function UserBalance({ user }: PageProp) {
 
     const transactions = userData?.transactions;
 
-    console.log(transactions);
-
     return (
         <>
             <Head title="Leaves" />
@@ -107,19 +105,17 @@ export default function UserBalance({ user }: PageProp) {
 
                     {/* History */}
                     <TabsContent value="table" className="space-y-4">
-                        <>
-                            <DataTable
-                                data={transactions?.data}
-                                columns={HistoryColumns}
-                            />
+                        <DataTable
+                            data={transactions?.data}
+                            columns={HistoryColumns}
+                        />
 
-                            <PaginationButton
-                                currentPage={transactions?.current_page ?? 1}
-                                lastPage={transactions?.last_page ?? 1}
-                                onPageChange={setPage}
-                                isLoading={isFetching}
-                            />
-                        </>
+                        <PaginationButton
+                            currentPage={transactions?.current_page ?? 1}
+                            lastPage={transactions?.last_page ?? 1}
+                            onPageChange={setPage}
+                            isLoading={isFetching}
+                        />
                     </TabsContent>
 
                     {/* Form */}

@@ -7,7 +7,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import {
     Field,
@@ -16,17 +15,13 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
-import { Leave } from '@/types';
-import { Check, X } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { Textarea } from '../ui/textarea';
-import { useForm } from '@inertiajs/react';
 import leaves from '@/routes/leaves';
+import { Leave } from '@/types';
+import { useForm } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import SelectCombobox from './SelectCombobox';
 import { event_types } from './constants/constants';
 import DatePicker from './DatePicker';
+import SelectCombobox from './SelectCombobox';
 
 type FilingProp = {
     leave: Leave;
