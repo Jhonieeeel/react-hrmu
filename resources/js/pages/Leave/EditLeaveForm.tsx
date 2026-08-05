@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import leaves from '@/routes/leaves';
 import { Leave } from '@/types';
 import { useForm } from '@inertiajs/react';
+import { format, parseISO } from 'date-fns';
 
 type PageProps = {
     leave: Leave;
@@ -26,22 +27,28 @@ export default function EditLeaveForm({ leave }: PageProps) {
         event_type: leave?.event_type,
         event_tag: leave?.event_tag,
         balance: leave?.balance,
-        starts_at: format(new Date(leave?.starts_at), 'YYYY DD, MM'),
+        starts_at: leave?.starts_at,
         ends_at: leave?.ends_at,
         status: leave?.status,
         remarks: leave?.remarks,
     });
 
-    function handleSubmit(e: React.SubmitEvent) {}
+    function handleSubmit(e: React.SubmitEvent) {
+        e.preventDefault();
+        0;
+    }
 
     return (
         <div className="space-y-6 p-14">
             <div>
                 <h1 className="text-4xl font-semibold dark:text-accent">
-                    Edit Form
+                    Edit Leave Form
                 </h1>
             </div>
-            <form className="w-full max-w-xl" onSubmit={handleSubmit}>
+            <form
+                className="w-full max-w-xl border p-14 shadow-md"
+                onSubmit={handleSubmit}
+            >
                 <FieldSet>
                     {/* Leave Type */}
                     <FieldGroup>
@@ -75,7 +82,7 @@ export default function EditLeaveForm({ leave }: PageProps) {
                             <Field>
                                 <FieldLabel>Starting Date</FieldLabel>
                                 <DatePicker
-                                    value={form.data.starts_at}
+                                    value={format(form.data.starts_at, 'PPP')}
                                     disabled={!form.data.leave_type}
                                     placeholder="Select date"
                                     onChange={(date) => {
