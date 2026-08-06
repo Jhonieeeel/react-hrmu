@@ -21,7 +21,8 @@ class Leave extends Model
 
     protected $casts = [
         'starts_at' => 'datetime',
-        'ends_at' => 'datetime'
+        'ends_at' => 'datetime',
+        'balance' => 'decimal:3'
     ];
 
     public function user(): BelongsTo

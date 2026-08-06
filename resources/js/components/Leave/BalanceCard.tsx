@@ -57,7 +57,8 @@ export default function BalanceCard({ balance, isFetching }: BalanceProp) {
 
                             <div className="flex items-end gap-2">
                                 <span className="text-4xl font-bold text-primary">
-                                    {balance.current}
+                                    {balance.current.toFixed(3) ??
+                                        balance.current}
                                 </span>
 
                                 <span className="mb-1 text-sm text-muted-foreground">
@@ -89,7 +90,8 @@ export default function BalanceCard({ balance, isFetching }: BalanceProp) {
                                 </p>
 
                                 <p className="text-lg font-semibold">
-                                    {balance.previous}
+                                    {balance.previous.toFixed(3) ??
+                                        balance.previous}
                                 </p>
                             </div>
 
@@ -99,7 +101,8 @@ export default function BalanceCard({ balance, isFetching }: BalanceProp) {
                                 </p>
 
                                 <p className="text-lg font-semibold">
-                                    {balance.estimated}
+                                    {balance.estimated.toFixed(3) ??
+                                        balance.estimated}
                                 </p>
                             </div>
                         </div>

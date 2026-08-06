@@ -7,6 +7,7 @@ use App\Actions\Leave\HasAccrualAction;
 use App\Actions\Leave\LeaveHistoryAction;
 use App\Actions\Leave\ReplayBalanceAction;
 use App\Actions\Leave\CreateLeaveAction;
+use App\Actions\Leave\MonthlyAccrualAction;
 use App\Actions\Leave\UsersFilingAction;
 use App\Data\LeaveDTO;
 use App\Models\Leave;
@@ -32,8 +33,17 @@ class LeaveController extends Controller
 
     public function edit(Leave $leave)
     {
+        $leave->load('user');
 
-        return Inertia::render("Leave/EditLeaveForm", ['leave' => $leave]);
+        if (in_array($leave->event_tag, ['tardiness', 'undertime'])) {
+            return Inertia::render('Leave/EditUndertimeForm', [
+                'leave' => $leave,
+            ]);
+        }
+
+        return Inertia::render('Leave/EditLeaveForm', [
+            'leave' => $leave,
+        ]);
     }
 
     public function show(User $user)
@@ -80,5 +90,12 @@ class LeaveController extends Controller
     public function filing(Request $request, UsersFilingAction $usersFiling)
     {
         return response()->json($usersFiling($request));
+    }
+
+    public function accrual(LeaveDTO $data, MonthlyAccrualAction $action)
+    {
+        $action->handleAccrual($data);
+
+        return to_route("leaves.index")->with('message', 'Monthly Accrual Created Successfully.');
     }
 }

@@ -126,10 +126,10 @@ export default function UserBalance({ user }: PageProp) {
                             onOpenChange={setOpenLeave}
                         >
                             <CollapsibleTrigger className="flex items-center gap-2">
-                                <h1 className="mb-4 inline-flex items-center gap-2 text-2xl font-semibold dark:text-accent">
+                                <p className="text-md mb-4 inline-flex items-center gap-2 font-semibold dark:text-accent">
                                     <Plane />
                                     Leave Form
-                                </h1>
+                                </p>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                                 <LeaveForm user={user} />
@@ -142,10 +142,10 @@ export default function UserBalance({ user }: PageProp) {
                             onOpenChange={setOpenUndertime}
                         >
                             <CollapsibleTrigger>
-                                <h1 className="mb-4 inline-flex items-center gap-2 text-2xl font-semibold dark:text-accent">
+                                <p className="text-md mb-4 inline-flex items-center gap-2 font-semibold dark:text-accent">
                                     <TimerOffIcon />
                                     Undertime Form
-                                </h1>
+                                </p>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                                 <UndertimeForm user={user} />

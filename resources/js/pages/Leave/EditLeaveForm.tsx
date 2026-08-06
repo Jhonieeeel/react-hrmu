@@ -10,10 +10,11 @@ import {
     FieldSet,
 } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
+import { toDateOnly } from '@/lib/utils';
 import leaves from '@/routes/leaves';
 import { Leave } from '@/types';
 import { useForm } from '@inertiajs/react';
-import { format, parseISO } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 
 type PageProps = {
     leave: Leave;
@@ -27,15 +28,36 @@ export default function EditLeaveForm({ leave }: PageProps) {
         event_type: leave?.event_type,
         event_tag: leave?.event_tag,
         balance: leave?.balance,
-        starts_at: leave?.starts_at,
-        ends_at: leave?.ends_at,
+        starts_at: toDateOnly(leave?.starts_at),
+        ends_at: toDateOnly(leave?.ends_at),
         status: leave?.status,
         remarks: leave?.remarks,
     });
 
-    function handleSubmit(e: React.SubmitEvent) {
+    function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        0;
+
+        form.submit(leaves.update(leave.id), {
+            onSuccess: () => {
+                form.reset();
+            },
+        });
+    }
+
+    function handleClear() {
+        form.setData({
+            user_id: leave?.user_id,
+            id: leave?.id,
+            leave_type: leave?.leave_type,
+            event_type: leave?.event_type,
+            event_tag: leave?.event_tag,
+            balance: leave?.balance,
+            starts_at: toDateOnly(leave?.starts_at),
+            ends_at: toDateOnly(leave?.ends_at),
+            status: leave?.status,
+            remarks: leave?.remarks,
+        });
+        form.clearErrors();
     }
 
     return (
@@ -82,7 +104,7 @@ export default function EditLeaveForm({ leave }: PageProps) {
                             <Field>
                                 <FieldLabel>Starting Date</FieldLabel>
                                 <DatePicker
-                                    value={format(form.data.starts_at, 'PPP')}
+                                    value={form.data.starts_at}
                                     disabled={!form.data.leave_type}
                                     placeholder="Select date"
                                     onChange={(date) => {
@@ -113,7 +135,7 @@ export default function EditLeaveForm({ leave }: PageProps) {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    // onClick={handleClear}
+                                    onClick={handleClear}
                                     className="h-9 px-3 transition-colors hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
                                 >
                                     Clear

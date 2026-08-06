@@ -110,7 +110,7 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
                     }
                 >
                     {sign}
-                    {balance.toFixed(3)}
+                    {balance}
                 </div>
             );
         },
@@ -190,7 +190,6 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
                             {leave.event_type === 'deduction' && (
                                 <DropdownMenuItem asChild>
                                     <Link
-                                        onClick={() => console.log('test')}
                                         href={leaves.edit(leave)}
                                         target="_blank'"
                                     >

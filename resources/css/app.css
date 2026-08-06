@@ -211,7 +211,7 @@
 } */
 
 .sx-react-calendar-wrapper {
-    @apply h-200 max-h-[90vh] w-full max-w-[100vw];
+    @apply h-500 max-h-[90vh] w-full max-w-[100vw];
 }
 
 @layer base {

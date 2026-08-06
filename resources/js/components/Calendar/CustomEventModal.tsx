@@ -23,6 +23,7 @@ export default function CustomEventModal({
 
     return (
         <Dialog
+            modal={false}
             open={open}
             onOpenChange={(next) => {
                 onOpenChange(next);

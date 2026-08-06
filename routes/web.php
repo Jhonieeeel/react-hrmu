@@ -14,12 +14,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get("leaves", [LeaveController::class, 'index'])->name('leaves.index');
     Route::get("leaves/{user}", [leaveController::class, 'show'])->name('leaves.show');
     Route::get("calendar", [CalendarController::class, 'index'])->name('calendar.index');
-    Route::get("leaves/{leave}/edit", [LeaveController::class, 'edit'])->name('leaves.edit');
+    Route::get("leaves/{leave}/edit_leave", [LeaveController::class, 'edit'])->name('leaves.edit');
 
     // PUT / POST
-    Route::put("leaves/{leave}/update", [LeaveController::class, 'update'])->name('leaves.update');
-    Route::post("leaves/create", [LeaveController::class, 'store'])->name('leaves.store');
-    Route::post("leaves/undertim/create", [UndertimeController::class, 'store'])->name('undertime.store');
+    Route::put("leaves/{leave}/update_filing", [LeaveController::class, 'update'])->name('leaves.update');
+    Route::post("leaves/create_leave", [LeaveController::class, 'store'])->name('leaves.store');
+    Route::post("leaves/undertim/create_undertime", [UndertimeController::class, 'store'])->name('undertime.store');
+    Route::put("leaves/{leave}/update_undertime", [UndertimeController::class, 'update'])->name('undertime.update');
+    Route::post("leaves/{user}/create_accrual", [LeaveController::class, 'accrual'])->name('leaves.accrual');
 
     // data
     Route::get("data/leaves", [LeaveController::class, "filing"])->name('leaves.data');

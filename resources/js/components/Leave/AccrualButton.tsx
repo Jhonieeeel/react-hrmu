@@ -1,4 +1,5 @@
 import { Spinner } from '@/components/ui/spinner';
+import leaves from '@/routes/leaves';
 // import leave from '@/routes/leave';
 import { Filters } from '@/types';
 import { Button } from '@base-ui/react';
@@ -35,7 +36,7 @@ export default function AccrualButton({
     function handleAccrual(e: React.MouseEvent) {
         e.preventDefault();
 
-        // form.submit(leave.accrual(form.data.user_id));
+        form.submit(leaves.accrual(form.data.user_id));
     }
 
     return (

@@ -43,11 +43,11 @@ const mainNavItems: NavItem[] = [
         href: calendar.index(),
         icon: CalendarClock,
     },
-    {
-        title: 'Pass Slip',
-        href: '',
-        icon: FileTextIcon,
-    },
+    // {
+    //     title: 'Pass Slip',
+    //     href: '',
+    //     icon: FileTextIcon,
+    // },
 ];
 
 const footerNavItems: NavItem[] = [

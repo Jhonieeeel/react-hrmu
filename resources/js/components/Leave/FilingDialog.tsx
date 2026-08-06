@@ -11,14 +11,13 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldError, FieldGroup } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
-import { Leave } from '@/types';
-import { Check, X } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { Textarea } from '../ui/textarea';
-import { useForm } from '@inertiajs/react';
 import leaves from '@/routes/leaves';
+import { Leave } from '@/types';
+import { useForm } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Check, X } from 'lucide-react';
+import { Textarea } from '../ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 
 type FilingProp = {
     children: React.ReactNode;

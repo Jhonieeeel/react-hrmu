@@ -21,6 +21,8 @@ import { useState } from 'react';
 import DatePicker from '../Leave/DatePicker';
 import { calendarConfig } from './config/colors';
 import { event_types } from '../Leave/constants/constants';
+import SelectCombobox from '../Leave/SelectCombobox';
+import { toDateOnly } from '@/lib/utils';
 
 type Props = {
     calendarEvent: CalendarEvent;
@@ -44,15 +46,15 @@ function formatDate(dateStr: string) {
 
 export default function EditEventDialog({ calendarEvent, setMode }: Props) {
     const form = useForm({
-        user_id: calendarEvent.user_id,
-        id: calendarEvent.id,
+        user_id: calendarEvent?.user_id,
+        id: calendarEvent?.id,
         leave_type: '',
         event_type: 'deduction',
         event_tag: 'leave',
-        starts_at: '',
-        ends_at: '',
+        starts_at: toDateOnly(calendarEvent?.start),
+        ends_at: toDateOnly(calendarEvent?.end),
         balance: 0,
-        status: Boolean(calendarEvent.status),
+        status: Boolean(calendarEvent?.status),
     });
 
     const start = formatDate(calendarEvent.start);
