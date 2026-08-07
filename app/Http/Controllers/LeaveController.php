@@ -7,11 +7,13 @@ use App\Actions\Leave\HasAccrualAction;
 use App\Actions\Leave\LeaveHistoryAction;
 use App\Actions\Leave\ReplayBalanceAction;
 use App\Actions\Leave\CreateLeaveAction;
+use App\Actions\Leave\ExportPdfAction;
 use App\Actions\Leave\MonthlyAccrualAction;
 use App\Actions\Leave\UsersFilingAction;
 use App\Data\LeaveDTO;
 use App\Models\Leave;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -97,5 +99,22 @@ class LeaveController extends Controller
         $action->handleAccrual($data);
 
         return to_route("leaves.index")->with('message', 'Monthly Accrual Created Successfully.');
+    }
+
+    public function export(Request $request, ExportPdfAction $export, ReplayBalanceAction $balanceAction)
+    {
+        $month = $request->input("month", now()->month);
+        $year = $request->input("year", now()->year);
+
+        $date = Carbon::create($year, $month, 1);
+        $users = User::select(['id', 'name'])->get();
+
+        $usersBalance = $balanceAction->UsersBalances($date, $users);
+        $exportUrl = $export->exportPdf($usersBalance);
+
+        return to_route(
+            'leaves.index',
+            $request->only(['year', 'month'])
+        )->with('downloadUrl', $exportUrl);
     }
 }

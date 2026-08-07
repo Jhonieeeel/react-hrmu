@@ -1,4 +1,5 @@
 import { FilingColumns } from '@/components/Leave/columns/FilingColumns';
+import DownloadButton from '@/components/Leave/ExportButton';
 import FilterButton from '@/components/Leave/FilterButton';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
@@ -8,7 +9,13 @@ import { Head } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-export default function Leaves() {
+type PageProp = {
+    flash: {
+        downloadUrl: string;
+    };
+};
+
+export default function Leaves({ flash }: PageProp) {
     const [date, setDate] = useState({
         month: String(new Date().getMonth() + 1),
         year: String(new Date().getFullYear()),
@@ -41,7 +48,8 @@ export default function Leaves() {
                             period.
                         </p>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-3">
+                        <DownloadButton flash={flash} date={date} />
                         <FilterButton handleFilter={handleFilter} date={date} />
                     </div>
                 </div>

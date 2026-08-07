@@ -90,7 +90,7 @@ class ReplayBalanceAction
                 ->whereIn('event_tag', ['tardiness', 'undertime']);
 
             $currentFiledLeaves = $userCurrentEvents
-                ->where('event_tag', 'leave');
+                ->whereIn('event_tag', ['leave', 'cto']);
 
             $filing = $userCurrentEvents->where('leave_type', 'monthly filing')->first();
 
@@ -118,9 +118,7 @@ class ReplayBalanceAction
 
             $startsAt = Carbon::parse($leave->starts_at);
 
-            $abbreviation = collect(explode(' ', $leave->leave_type))
-                ->map(fn($word) => Str::upper(Str::substr($word, 0, 1)))
-                ->implode('');
+            $abbreviation = self::abbreviateLeaveType($leave->leave_type);
 
             return [
                 'label' => $startsAt->format('M j') . ' - ' . $abbreviation,
@@ -128,6 +126,17 @@ class ReplayBalanceAction
                 'starts_at' => $startsAt->toDateString(),
             ];
         })->values()->toArray();
+    }
+
+    protected static function abbreviateLeaveType(string $leaveType): string
+    {
+        if (Str::upper($leaveType) === 'CTO') {
+            return 'CTO';
+        }
+
+        return collect(explode(' ', $leaveType))
+            ->map(fn($word) => Str::upper(Str::substr($word, 0, 1)))
+            ->implode('');
     }
 
     protected static function deductionEvents(Collection $currentUndertime): array

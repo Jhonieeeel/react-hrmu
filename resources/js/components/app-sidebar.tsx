@@ -7,6 +7,7 @@ import {
     FolderGit2,
     LayoutGrid,
     Plane,
+    User2,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -26,6 +27,7 @@ import type { NavItem } from '@/types';
 import leaves from '@/routes/leaves';
 import OCD from '../../../public/ocd_logo.svg';
 import calendar from '@/routes/calendar';
+import users from '@/routes/users';
 
 const mainNavItems: NavItem[] = [
     {
@@ -42,6 +44,11 @@ const mainNavItems: NavItem[] = [
         title: 'Calendar',
         href: calendar.index(),
         icon: CalendarClock,
+    },
+    {
+        title: 'Users',
+        href: users.index(),
+        icon: User2,
     },
     // {
     //     title: 'Pass Slip',
