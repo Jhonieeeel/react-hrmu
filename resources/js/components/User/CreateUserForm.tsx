@@ -1,6 +1,12 @@
 import { useForm } from '@inertiajs/react';
 import { Button } from '../ui/button';
-import { Field, FieldGroup, FieldLabel, FieldSet } from '../ui/field';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldSet,
+} from '../ui/field';
 import { Input } from '../ui/input';
 import users from '@/routes/users';
 
@@ -18,12 +24,19 @@ export default function CreateUserForm() {
         form.submit(users.store());
     }
 
+    function handleClear() {
+        form.reset();
+        form.clearErrors();
+    }
+
     return (
         <form onSubmit={handleSubmit}>
-            <FieldSet className="w-full max-w-xl border shadow md:p-14">
-                <FieldGroup>
+            <FieldSet className="w-full border-0 p-0">
+                <FieldGroup className="gap-5">
+                    {/* Name */}
                     <Field>
-                        <FieldLabel>Name</FieldLabel>
+                        <FieldLabel htmlFor="name">Name</FieldLabel>
+
                         <Input
                             id="name"
                             type="text"
@@ -32,11 +45,16 @@ export default function CreateUserForm() {
                                 form.setData('name', e.target.value)
                             }
                             placeholder="Full name"
+                            className="placeholder:text-muted-foreground/50"
                         />
+
+                        <FieldError>{form.errors.name}</FieldError>
                     </Field>
 
+                    {/* Email */}
                     <Field>
-                        <FieldLabel>Email Address</FieldLabel>
+                        <FieldLabel htmlFor="email">Email Address</FieldLabel>
+
                         <Input
                             id="email"
                             type="email"
@@ -45,11 +63,16 @@ export default function CreateUserForm() {
                                 form.setData('email', e.target.value)
                             }
                             placeholder="email@example.com"
+                            className="placeholder:text-muted-foreground/50"
                         />
+
+                        <FieldError>{form.errors.email}</FieldError>
                     </Field>
 
+                    {/* Password */}
                     <Field>
-                        <FieldLabel>Password</FieldLabel>
+                        <FieldLabel htmlFor="password">Password</FieldLabel>
+
                         <Input
                             id="password"
                             type="password"
@@ -57,12 +80,19 @@ export default function CreateUserForm() {
                             onChange={(e) =>
                                 form.setData('password', e.target.value)
                             }
-                            placeholder="Password"
+                            placeholder="Enter password"
+                            className="placeholder:text-muted-foreground/50"
                         />
+
+                        <FieldError>{form.errors.password}</FieldError>
                     </Field>
 
+                    {/* Confirm Password */}
                     <Field>
-                        <FieldLabel>Confirm Password</FieldLabel>
+                        <FieldLabel htmlFor="password_confirmation">
+                            Confirm Password
+                        </FieldLabel>
+
                         <Input
                             id="password_confirmation"
                             type="password"
@@ -74,15 +104,32 @@ export default function CreateUserForm() {
                                     e.target.value,
                                 )
                             }
+                            className="placeholder:text-muted-foreground/50"
                         />
+
+                        <FieldError>
+                            {form.errors.password_confirmation}
+                        </FieldError>
                     </Field>
 
-                    <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline">
+                    {/* Actions */}
+                    <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleClear}
+                            className="w-full sm:w-auto"
+                        >
                             Clear
                         </Button>
 
-                        <Button type="submit">Create User</Button>
+                        <Button
+                            type="submit"
+                            disabled={form.processing}
+                            className="w-full sm:w-auto"
+                        >
+                            {form.processing ? 'Creating...' : 'Create User'}
+                        </Button>
                     </div>
                 </FieldGroup>
             </FieldSet>

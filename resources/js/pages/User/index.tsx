@@ -81,21 +81,40 @@ export default function User({ users_data }: PageProp) {
 
                         {/* Create User */}
                         <TabsContent value="balance">
-                            <div className="grid grid-cols-2">
-                                <div className="space-y-3">
-                                    <h1 className="text-2xl font-semibold">
-                                        Add Balance
-                                    </h1>
+                            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                                {/* Add Balance */}
+                                <section className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                                    <div className="mb-6">
+                                        <h2 className="text-lg font-semibold tracking-tight">
+                                            Add Balance
+                                        </h2>
+
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            Create a new employee account and
+                                            assign their initial balance.
+                                        </p>
+                                    </div>
+
                                     <AddUserBalance users_data={users_data} />
-                                </div>
-                                <div className="space-y-3">
-                                    <h1 className="text-2xl font-semibold">
-                                        Monthly Filing Form
-                                    </h1>
+                                </section>
+
+                                {/* Monthly Filing */}
+                                <section className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                                    <div className="mb-6">
+                                        <h2 className="text-lg font-semibold tracking-tight">
+                                            Monthly Filing Form
+                                        </h2>
+
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            Record an employee's leave type,
+                                            balance, and filing period.
+                                        </p>
+                                    </div>
+
                                     <UserMonthlyFilingForm
                                         users_data={users_data}
                                     />
-                                </div>
+                                </section>
                             </div>
                         </TabsContent>
                     </Tabs>

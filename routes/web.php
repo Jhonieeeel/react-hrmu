@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\PassSlipController;
 use App\Http\Controllers\UndertimeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,8 @@ Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
+
+    // export
     Route::get("leaves/exporting_excel", [LeaveController::class, 'export'])->name('leaves.export');
 
 
@@ -36,7 +39,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get("data/calendar", [CalendarController::class, 'calendarEvents'])->name('calendar.data');
     Route::get("data/users", [UserController::class, 'data'])->name('users.data');
 
-    // export
+    Route::get("slip", [PassSlipController::class, 'index'])->name('slip.index');
+
 
 });
 

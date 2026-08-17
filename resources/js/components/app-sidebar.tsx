@@ -28,6 +28,7 @@ import leaves from '@/routes/leaves';
 import OCD from '../../../public/ocd_logo.svg';
 import calendar from '@/routes/calendar';
 import users from '@/routes/users';
+import slip from '@/routes/slip';
 
 const mainNavItems: NavItem[] = [
     {
@@ -50,11 +51,11 @@ const mainNavItems: NavItem[] = [
         href: users.index(),
         icon: User2,
     },
-    // {
-    //     title: 'Pass Slip',
-    //     href: '',
-    //     icon: FileTextIcon,
-    // },
+    {
+        title: 'Pass Slip',
+        href: slip.index(),
+        icon: FileTextIcon,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
