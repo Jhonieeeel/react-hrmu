@@ -48,10 +48,14 @@ class LeaveController extends Controller
         ]);
     }
 
-    public function show(User $user)
+    public function show(User $user, Request $request)
     {
         return Inertia::render("Leave/UserBalance", [
-            'user' => $user
+            'user' => $user,
+            'filters' => [
+                'month' => $request->month,
+                'year' => $request->year
+            ]
         ]);
     }
 
@@ -84,7 +88,11 @@ class LeaveController extends Controller
         return response()->json([
             'balances' => $balances,
             'transactions' => $transactions,
-            'hasAccrual' => $accrualStatus
+            'hasAccrual' => $accrualStatus,
+            'filters' => [
+                'month' => $request->month,
+                'year' => $request->year
+            ]
         ]);
     }
 

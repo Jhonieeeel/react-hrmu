@@ -15,3 +15,13 @@ export function toDateOnly(value?: string | null) {
     if (!value) return '';
     return value.includes('T') ? value.split('T')[0] : value;
 }
+
+export function readFiltersFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const now = new Date();
+
+    return {
+        month: params.get('month') ?? String(now.getMonth() + 1),
+        year: params.get('year') ?? String(now.getFullYear()),
+    };
+}

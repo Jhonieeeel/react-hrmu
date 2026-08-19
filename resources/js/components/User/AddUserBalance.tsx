@@ -105,6 +105,7 @@ export default function AddUserBalance({ users_data }: PageProp) {
                             id="balance"
                             type="number"
                             min="0"
+                            step="0.001"
                             value={form.data.balance}
                             onChange={(e) =>
                                 form.setData('balance', Number(e.target.value))

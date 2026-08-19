@@ -12,10 +12,11 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { readFiltersFromUrl } from '@/lib/utils';
 import getUserBalanceOption from '@/queries/fetchUserBalance';
 import leaves from '@/routes/leaves';
 import { User } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
     ArrowDown,
@@ -32,10 +33,12 @@ type PageProp = {
 };
 
 export default function UserBalance({ user }: PageProp) {
-    const [date, setDate] = useState({
-        month: String(new Date().getMonth() + 1),
-        year: String(new Date().getFullYear()),
-    });
+    // const [date, setDate] = useState({
+    //     month: String(new Date().getMonth() + 1),
+    //     year: String(new Date().getFullYear()),
+    // });
+
+    const [date, setDate] = useRemember(readFiltersFromUrl(), 'Filing:filters');
 
     const [page, setPage] = useState(1);
 

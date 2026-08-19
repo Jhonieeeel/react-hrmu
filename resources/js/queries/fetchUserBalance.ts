@@ -12,6 +12,7 @@ export default function getUserBalanceOption(
         queryKey: ['leaves', month, year, user_id, page],
         queryFn: () => getUserBalance(month, year, user_id, page),
         placeholderData: (previous) => previous,
+        staleTime: 1000 * 60 * 1,
     });
 }
 

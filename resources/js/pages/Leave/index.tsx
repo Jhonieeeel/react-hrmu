@@ -5,9 +5,9 @@ import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
 import getFilingOption from '@/queries/fetchMonthlyFiling';
 import { dashboard } from '@/routes';
-import { Head } from '@inertiajs/react';
+import { Head, router, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type PageProp = {
     flash: {
@@ -15,11 +15,18 @@ type PageProp = {
     };
 };
 
+function readFiltersFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const now = new Date();
+
+    return {
+        month: params.get('month') ?? String(now.getMonth() + 1),
+        year: params.get('year') ?? String(now.getFullYear()),
+    };
+}
+
 export default function Leaves({ flash }: PageProp) {
-    const [date, setDate] = useState({
-        month: String(new Date().getMonth() + 1),
-        year: String(new Date().getFullYear()),
-    });
+    const [date, setDate] = useRemember(readFiltersFromUrl(), 'Filing:filters');
 
     const [page, setPage] = useState(1);
 
@@ -32,6 +39,11 @@ export default function Leaves({ flash }: PageProp) {
 
     const { data: filing, isFetching } = useQuery(
         getFilingOption(date.month, date.year, page),
+    );
+
+    const columns = useMemo(
+        () => FilingColumns({ month: date.month, year: date.year }),
+        [date.month, date.year],
     );
 
     return (
@@ -54,10 +66,7 @@ export default function Leaves({ flash }: PageProp) {
                     </div>
                 </div>
                 <div className="relative min-h-screen flex-1 space-y-4 overflow-hidden rounded-xl border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                    <DataTable
-                        data={filing?.data ?? []}
-                        columns={FilingColumns}
-                    />
+                    <DataTable data={filing?.data ?? []} columns={columns} />
                     <PaginationButton
                         currentPage={filing?.current_page ?? 1}
                         lastPage={filing?.last_page ?? 1}

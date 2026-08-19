@@ -12,6 +12,7 @@ export default function getFilingOption(
         queryKey: ['leaves', month, year, page],
         queryFn: () => getMonthlyFiling(month, year, page),
         placeholderData: (previous) => previous,
+        staleTime: 1000 * 60 * 1,
     });
 }
 
