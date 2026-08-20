@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pass_slips', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('position');
             $table->string('usd');
             $table->string('destination');
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->datetime('departure');
             $table->datetime('arrival');
             $table->boolean('status')->default(false);
-            $table->foreignId('assigned_to')->constrained()->restrictOnDelete();
+            $table->foreignId('assigned_to')->constrained('users')->restrictOnDelete();
             $table->timestamps();
         });
     }

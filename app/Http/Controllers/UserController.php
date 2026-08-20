@@ -49,6 +49,6 @@ class UserController extends Controller
     }
 
     public function index(): Response {
-        return Inertia::render("User/index", ['users_data' => User::query()->select(['id', 'name'])->get()]);
+        return Inertia::render("User/index", ['users_data' => User::query()->where('is_transferee', true)->select(['id', 'name'])->get()]);
     }
 }

@@ -7,10 +7,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PassSlip extends Model
 {
-    protected $fillable = [
+     protected $fillable = [
         'user_id',
-        'title',
+        'position',
+        'usd',
         'destination',
+        'purpose',
+        'request_type',
+        'departure',
+        'arrival',
+        'status',
+        'assigned_to',
     ];
 
     public function user(): BelongsTo {

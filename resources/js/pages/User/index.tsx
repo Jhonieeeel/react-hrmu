@@ -71,11 +71,6 @@ export default function User({ users_data }: PageProp) {
 
                         {/* Create User */}
                         <TabsContent value="create">
-                            <div>
-                                <h1 className="text-2xl font-semibold">
-                                    User Creation
-                                </h1>
-                            </div>
                             <CreateUserForm />
                         </TabsContent>
 

@@ -9,17 +9,30 @@ import {
 } from '../ui/field';
 import { Input } from '../ui/input';
 import users from '@/routes/users';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { ArrowRightLeft, Check, UserPlus, X } from 'lucide-react';
+import DatePicker from '../Leave/DatePicker';
+import { endOfMonth, format } from 'date-fns';
 
 export default function CreateUserForm() {
     const form = useForm({
         name: '',
         email: '',
+        is_transferee: false,
+        starts_at: '',
+        ends_at: '',
         password: '',
         password_confirmation: '',
     });
 
     function handleSubmit(e: React.SubmitEvent) {
         e.preventDefault();
+
+        form.transform((data) => ({
+            ...data,
+            starts_at: format(endOfMonth(form.data.starts_at), 'yyyy-MM-dd'),
+            ends_at: format(endOfMonth(form.data.ends_at), 'yyyy-MM-dd'),
+        }));
 
         form.submit(users.store());
     }
@@ -31,7 +44,9 @@ export default function CreateUserForm() {
 
     return (
         <form onSubmit={handleSubmit}>
-            <FieldSet className="w-full border-0 p-0">
+            <FieldSet className="mx-auto w-full max-w-xl border-0 shadow-md md:p-8">
+                <h1 className="text-2xl font-semibold">User Creation</h1>
+
                 <FieldGroup className="gap-5">
                     {/* Name */}
                     <Field>
@@ -67,6 +82,61 @@ export default function CreateUserForm() {
                         />
 
                         <FieldError>{form.errors.email}</FieldError>
+                    </Field>
+
+                    {/* Trabsferee or Not */}
+                    <Field>
+                        <FieldLabel htmlFor="transferee">
+                            Is transferee
+                        </FieldLabel>
+
+                        <ToggleGroup
+                            type="single"
+                            value={
+                                form.data.is_transferee
+                                    ? 'new employee'
+                                    : 'transferee'
+                            }
+                            onValueChange={(value) => {
+                                if (!value) return;
+                                form.setData(
+                                    'is_transferee',
+                                    value === 'new employee',
+                                );
+                            }}
+                            className="grid w-full grid-cols-2 gap-3"
+                        >
+                            <ToggleGroupItem
+                                value={'new employee'}
+                                className="flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 text-emerald-600 transition-all duration-300 hover:border-emerald-500/60 hover:bg-emerald-500/10 data-[state=on]:scale-[1.02] data-[state=on]:border-emerald-500 data-[state=on]:bg-emerald-500 data-[state=on]:text-white data-[state=on]:shadow-lg dark:text-emerald-400 dark:data-[state=on]:text-white"
+                            >
+                                <UserPlus className="size-4" />
+                                <span className="font-medium">
+                                    New Employee
+                                </span>
+                            </ToggleGroupItem>
+
+                            <ToggleGroupItem
+                                value="transferee"
+                                className="flex h-10 items-center justify-center gap-2 rounded-xl border border-destructive/30 text-destructive transition-all duration-300 hover:border-destructive/60 hover:bg-destructive/10 data-[state=on]:scale-[1.02] data-[state=on]:border-destructive data-[state=on]:bg-destructive data-[state=on]:text-destructive-foreground data-[state=on]:shadow-lg"
+                            >
+                                <ArrowRightLeft className="size-4" />
+                                <span className="font-medium">Transferee</span>
+                            </ToggleGroupItem>
+                        </ToggleGroup>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>Date Created</FieldLabel>
+                        <DatePicker
+                            value={form.data.starts_at}
+                            onChange={(date) => {
+                                form.setData('starts_at', date);
+
+                                form.setData('ends_at', date);
+                            }}
+                            placeholder="Select date"
+                        />
                     </Field>
 
                     {/* Password */}

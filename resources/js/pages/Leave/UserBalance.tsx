@@ -19,7 +19,6 @@ import { User } from '@/types';
 import { Head, router, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
-    ArrowDown,
     NotebookPen,
     Plane,
     Scale,
@@ -43,6 +42,7 @@ export default function UserBalance({ user }: PageProp) {
     const [page, setPage] = useState(1);
 
     const [openLeave, setOpenLeave] = useState(false);
+
     const [openUndertime, setOpenUndertime] = useState(false);
 
     function handleFilter(key: 'month' | 'year', value: string) {

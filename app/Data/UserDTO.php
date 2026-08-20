@@ -11,5 +11,8 @@ class UserDTO extends Data
         public string $name,
         public string $email,
         public string $password,
+        public bool $is_transferee,
+        public ?string $starts_at,
+        public ?string $ends_at
     ) {}
 }
