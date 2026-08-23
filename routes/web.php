@@ -32,6 +32,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post("users/create", [UserController::class, 'store'])->name('users.store');
     Route::post("users/balance/create", [UserController::class, 'balance'])->name('users_balance.store');
     Route::post("users/monthy_filing/create", [UserController::class, 'filing'])->name('users_filing.store');
+    Route::get("users/{user}", [UserController::class, 'show'])->name('users_info.show');
+    Route::post("users/{user}/initial_accrual", [LeaveController::class, 'initialAccrual'])->name('leaves.initial_accrual');
+    Route::post('users/{user}/update', [UserController::class, 'update'])->name('users.update');
 
     // data
     Route::get("data/leaves", [LeaveController::class, "filing"])->name('leaves.data');

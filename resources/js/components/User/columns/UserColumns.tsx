@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import leaves from '@/routes/leaves';
+import users_info from '@/routes/users_info';
 import { User } from '@/types';
 import { Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
@@ -35,7 +36,7 @@ export const UserColumns: ColumnDef<User>[] = [
     {
         id: 'actions',
         cell: ({ row }) => {
-            const user = row.original.user;
+            const user = row.original;
             const leave = row.original;
 
             return (
@@ -48,9 +49,17 @@ export const UserColumns: ColumnDef<User>[] = [
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Edit User</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>View User</DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link
+                                href={users_info.show(user)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                prefetch
+                            >
+                                View User
+                            </Link>
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             );

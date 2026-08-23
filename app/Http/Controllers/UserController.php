@@ -16,6 +16,27 @@ use Illuminate\Validation\Rules;
 class UserController extends Controller
 {
 
+   public function update(UserDTO $userDTO)
+    {
+        $user = User::findOrFail($userDTO->id);
+
+        $user->update([
+            'name' => $userDTO->name,
+            'email' => $userDTO->email,
+            'employee_type' => $userDTO->employee_type,
+        ]);
+
+        return to_route('users.index')
+            ->with('message', 'User updated successfully.');
+    }
+
+    public function show(User $user): Response
+    {
+        return Inertia::render('User/UserInfo', [
+            'user' => $user->only(['id', 'name', 'email', 'employee_type']),
+        ]);
+    }
+
     public function filing(LeaveDTO $dto, AddMonthlyForm $filing) {
         $filing->monthyFiling($dto);
 
@@ -28,6 +49,7 @@ class UserController extends Controller
 
         return to_route('users.index')->with('message', "$dto->leave_type balance has been added!");
     }
+    
 
     public function store(Request $request, CreateUserAction $action, UserDTO $data)
     {
@@ -49,7 +71,7 @@ class UserController extends Controller
     }
 
     public function index(): Response {
-        // is_transferee = 1, yes "New Employee, 0 if transferee
-        return Inertia::render("User/index", ['users_data' => User::query()->select(['id', 'name'])->get()]);
+        // employee_type = 1, yes "New Employee, 0 if existing employee
+        return Inertia::render("User/index", ['users_data' => User::query()->where('employee_type', 'transferee')->select(['id', 'name'])->get()]);
     }
 }

@@ -39,7 +39,7 @@ export default function User({ users_data }: PageProp) {
                 </div>
 
                 <div className="relative min-h-screen flex-1 space-y-4 overflow-hidden rounded-xl border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                    <Tabs defaultValue="balance" className="space-y-6">
+                    <Tabs defaultValue="users" className="space-y-6">
                         <TabsList variant="line">
                             <TabsTrigger value="users">
                                 <Users2 className="mr-2 h-4 w-4" />

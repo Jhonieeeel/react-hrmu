@@ -10,7 +10,7 @@ import {
 import { Input } from '../ui/input';
 import users from '@/routes/users';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { ArrowRightLeft, Check, UserPlus, X } from 'lucide-react';
+import { ArrowRightLeft, Check, User2, UserPlus, X } from 'lucide-react';
 import DatePicker from '../Leave/DatePicker';
 import { endOfMonth, format } from 'date-fns';
 
@@ -18,7 +18,7 @@ export default function CreateUserForm() {
     const form = useForm({
         name: '',
         email: '',
-        is_transferee: false,
+        employee_type: '',
         starts_at: '',
         ends_at: '',
         password: '',
@@ -92,22 +92,16 @@ export default function CreateUserForm() {
 
                         <ToggleGroup
                             type="single"
-                            value={
-                                form.data.is_transferee
-                                    ? 'new employee'
-                                    : 'transferee'
-                            }
+                            value={form.data.employee_type}
                             onValueChange={(value) => {
                                 if (!value) return;
-                                form.setData(
-                                    'is_transferee',
-                                    value === 'new employee',
-                                );
+
+                                form.setData('employee_type', value);
                             }}
                             className="grid w-full grid-cols-2 gap-3"
                         >
                             <ToggleGroupItem
-                                value={'new employee'}
+                                value="new employee"
                                 className="flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 text-emerald-600 transition-all duration-300 hover:border-emerald-500/60 hover:bg-emerald-500/10 data-[state=on]:scale-[1.02] data-[state=on]:border-emerald-500 data-[state=on]:bg-emerald-500 data-[state=on]:text-white data-[state=on]:shadow-lg dark:text-emerald-400 dark:data-[state=on]:text-white"
                             >
                                 <UserPlus className="size-4" />
@@ -115,6 +109,16 @@ export default function CreateUserForm() {
                                     New Employee
                                 </span>
                             </ToggleGroupItem>
+
+                            {/* <ToggleGroupItem
+                                value="old"
+                                className="flex h-10 items-center justify-center gap-2 rounded-xl border border-blue-500/30 text-blue-600 transition-all duration-300 hover:border-blue-500/60 hover:bg-blue-500/10 data-[state=on]:scale-[1.02] data-[state=on]:border-blue-500 data-[state=on]:bg-blue-500 data-[state=on]:text-white data-[state=on]:shadow-lg dark:text-blue-400 dark:data-[state=on]:text-white"
+                            >
+                                <User2 className="size-4" />
+                                <span className="font-medium">
+                                    Old Employee
+                                </span>
+                            </ToggleGroupItem> */}
 
                             <ToggleGroupItem
                                 value="transferee"

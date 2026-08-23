@@ -1,4 +1,5 @@
 import AccrualButton from '@/components/Leave/AccrualButton';
+import AccrualDialog from '@/components/Leave/AccrualDialog';
 import BalanceCard from '@/components/Leave/BalanceCard';
 import { HistoryColumns } from '@/components/Leave/columns/HistoryColumn';
 import FilterButton from '@/components/Leave/FilterButton';
@@ -57,6 +58,9 @@ export default function UserBalance({ user }: PageProp) {
     );
 
     const transactions = userData?.transactions;
+    const needsInitialAccrual =
+        user?.employee_type === 'new employee' ||
+        user?.employee_type === 'transferee';
 
     return (
         <>
@@ -69,9 +73,22 @@ export default function UserBalance({ user }: PageProp) {
                         </h1>
                     </div>
                     <div className="flex items-center gap-3">
-                        {userData?.hasAccrual && (
+                        {userData?.hasAccrual &&
+                            (needsInitialAccrual ? (
+                                <AccrualDialog
+                                    filters={date}
+                                    user_id={user.id}
+                                />
+                            ) : (
+                                <AccrualButton
+                                    filters={date}
+                                    user_id={user.id}
+                                />
+                            ))}
+
+                        {/* {userData?.hasAccrual && (
                             <AccrualButton filters={date} user_id={user?.id} />
-                        )}
+                        )} */}
                         <FilterButton handleFilter={handleFilter} date={date} />
                     </div>
                 </div>

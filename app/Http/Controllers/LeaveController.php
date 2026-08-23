@@ -10,6 +10,7 @@ use App\Actions\Leave\CreateLeaveAction;
 use App\Actions\Leave\ExportPdfAction;
 use App\Actions\Leave\MonthlyAccrualAction;
 use App\Actions\Leave\UsersFilingAction;
+use App\Data\InitialAccrualDTO;
 use App\Data\LeaveDTO;
 use App\Models\Leave;
 use App\Models\User;
@@ -22,6 +23,13 @@ class LeaveController extends Controller
     public function index()
     {
         return Inertia::render("Leave/index");
+    }
+
+    public function initialAccrual(InitialAccrualDTO $initialAccrualDTO, MonthlyAccrualAction $action)
+    {
+        $action->addInitialAccrual($initialAccrualDTO);
+
+        return to_route("leaves.index")->with('message', 'Initial Accrual Created Successfully.');
     }
 
     public function store(Request $request, LeaveDTO $leaveData, CreateLeaveAction $action, CheckDateRangeAction $checkDateRangeAction)
@@ -84,6 +92,7 @@ class LeaveController extends Controller
         $balances = $replayBalance->UserBalance($request, $user);
         $transactions = $leaveHistory->transactions($request, $user);
         $accrualStatus = $hasAccrual->checkUserStatus($request, $user);
+        $employeeType = $user->employee_type;
 
         return response()->json([
             'balances' => $balances,
@@ -92,7 +101,8 @@ class LeaveController extends Controller
             'filters' => [
                 'month' => $request->month,
                 'year' => $request->year
-            ]
+            ],
+            'employeeType' => $employeeType
         ]);
     }
 

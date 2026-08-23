@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->boolean('is_transferee')->nullable()->default(false); // if not then 0 balance, if yes then add balance
+            $table->enum('employee_type', ['transferee', 'new employee', 'old'])->nullable()->default('new employee'); // if not then 0 balance, if yes then add balance
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();

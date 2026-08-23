@@ -14,12 +14,11 @@ class CreateUserAction
         $user =  User::create([
                 'name' => $data->name,
                 'email' => $data->email,
-                'is_transferee' => $data->is_transferee,
+                'employee_type' => $data->employee_type,
                 'password' => Hash::make($data->password),
             ]);
 
-        if (!$data->is_transferee) {
-            // if yes then default 0
+        if ($data->employee_type === 'new employee') {
             $this->defaultBalance($data, $user);
         }
 
