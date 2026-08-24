@@ -27,7 +27,7 @@ class UserController extends Controller
         ]);
 
         return to_route('users.index')
-            ->with('message', 'User updated successfully.');
+            ->with('success', 'User updated successfully.');
     }
 
     public function show(User $user): Response
@@ -40,16 +40,16 @@ class UserController extends Controller
     public function filing(LeaveDTO $dto, AddMonthlyForm $filing) {
         $filing->monthyFiling($dto);
 
-        return to_route('users.index')->with('message', 'Monthly Filing Created!');
+        return to_route('users.index')->with('success', 'Monthly Filing Created!');
     }
 
     public function balance(LeaveDTO $dto, AddUserBalanceAction $action) {
 
         $action($dto);
 
-        return to_route('users.index')->with('message', "$dto->leave_type balance has been added!");
+        return to_route('users.index')->with('success', "$dto->leave_type balance has been added!");
     }
-    
+
 
     public function store(Request $request, CreateUserAction $action, UserDTO $data)
     {
@@ -62,7 +62,7 @@ class UserController extends Controller
         $action->execute($data);
 
         return to_route('users.index')
-            ->with('message', 'User created successfully.');
+            ->with('success', 'User created successfully.');
     }
 
     // data

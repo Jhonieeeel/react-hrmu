@@ -24,6 +24,6 @@ class PassSlipController extends Controller
 
         $user->notify(new PassSlipNotification($passSlip));
 
-        return to_route('slip.index')->with('message', 'Pass Slip Added!');
+        return to_route('slip.index')->with('success', 'Pass Slip Added!');
     }
 }

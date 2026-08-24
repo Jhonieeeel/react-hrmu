@@ -28,6 +28,6 @@ class CalendarController extends Controller
 
         $action->createLeaves($weekdays, $leaveData);
 
-        return to_route('calendar.index')->with('message', 'Calendar Leave Added');
+        return to_route('calendar.index')->with('success', 'Calendar Leave Added');
     }
 }

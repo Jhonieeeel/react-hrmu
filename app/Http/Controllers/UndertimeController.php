@@ -13,7 +13,7 @@ class UndertimeController extends Controller
     public function update(Leave $leave, LeaveDTO $dto, UpdateUndertimeAction $updateAction) {
         $updateAction($leave, $dto);
 
-        return to_route('leaves.show', $dto->user_id)->with('message', 'Undertime Updated Successfully');
+        return to_route('leaves.show', $dto->user_id)->with('success', 'Undertime Updated Successfully');
 
     }
     public function store(LeaveDTO $dto, CreateUndertimeAction $action)
@@ -21,6 +21,6 @@ class UndertimeController extends Controller
 
         $action($dto);
 
-        return to_route('leaves.show', $dto->user_id)->with('message', 'Undertime Created Successfully');
+        return to_route('leaves.show', $dto->user_id)->with('success', 'Undertime Created Successfully');
     }
 }

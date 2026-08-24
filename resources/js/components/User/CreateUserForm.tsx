@@ -34,7 +34,11 @@ export default function CreateUserForm() {
             ends_at: format(endOfMonth(form.data.ends_at), 'yyyy-MM-dd'),
         }));
 
-        form.submit(users.store());
+        form.submit(users.store(), {
+            onSuccess: () => {
+                form.reset();
+            },
+        });
     }
 
     function handleClear() {

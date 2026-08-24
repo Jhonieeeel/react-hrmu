@@ -13,7 +13,7 @@ type AccrualButtonProps = {
 };
 
 export default function AccrualButton({
-    filters,
+    filters, // month, year
     user_id,
 }: AccrualButtonProps) {
     const base = new Date(Number(filters.year), Number(filters.month) - 1, 1);
@@ -31,6 +31,7 @@ export default function AccrualButton({
         balance: 1.25,
         starts_at: starts_at,
         ends_at: ends_at,
+        filters: filters,
     });
 
     function handleAccrual(e: React.MouseEvent) {

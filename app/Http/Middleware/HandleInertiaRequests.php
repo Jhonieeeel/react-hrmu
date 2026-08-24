@@ -43,7 +43,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'downloadUrl' => fn() => session('downloadUrl'),
-                'message' => fn() => session('message')
+                'success' => fn() => session('success')
             ],
             'sidebarOpen' => !$request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

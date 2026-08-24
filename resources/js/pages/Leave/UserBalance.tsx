@@ -7,6 +7,7 @@ import LeaveForm from '@/components/Leave/LeaveForm';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
 import UndertimeForm from '@/components/Leave/UndertimeForm';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Collapsible,
     CollapsibleContent,
@@ -20,6 +21,7 @@ import { User } from '@/types';
 import { Head, router, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
+    InfoIcon,
     NotebookPen,
     Plane,
     Scale,
@@ -30,9 +32,12 @@ import { useState } from 'react';
 
 type PageProp = {
     user: User;
+    flash: {
+        success: string;
+    };
 };
 
-export default function UserBalance({ user }: PageProp) {
+export default function UserBalance({ user, flash }: PageProp) {
     // const [date, setDate] = useState({
     //     month: String(new Date().getMonth() + 1),
     //     year: String(new Date().getFullYear()),
@@ -66,6 +71,18 @@ export default function UserBalance({ user }: PageProp) {
         <>
             <Head title="Leaves" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
+                {flash.success && (
+                    <Alert className="border-green-200 bg-green-50 text-green-800">
+                        <InfoIcon className="text-green-600" />
+                        <AlertTitle className="text-green-800">
+                            Success
+                        </AlertTitle>
+                        <AlertDescription className="text-green-700">
+                            {flash.success}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold dark:text-accent">

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -25,6 +26,8 @@ type FilingProp = {
 };
 
 export function FilingDialog({ children, leave }: FilingProp) {
+    const [open, setOpen] = useState(false);
+
     const form = useForm({
         id: leave?.id,
         status: leave?.status,
@@ -39,16 +42,20 @@ export function FilingDialog({ children, leave }: FilingProp) {
         form.submit(leaves.update(form.data.id), {
             onSuccess: () => {
                 form.reset();
+
                 queryClient.invalidateQueries({
                     queryKey: ['leaves'],
                 });
+
+                setOpen(false);
             },
         });
     }
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
+
             <DialogContent className="sm:max-w-sm">
                 <form onSubmit={handleSubmit} className="space-y-3">
                     <DialogHeader>
@@ -58,9 +65,11 @@ export function FilingDialog({ children, leave }: FilingProp) {
                             you&apos;re done.
                         </DialogDescription>
                     </DialogHeader>
+
                     <FieldGroup>
                         <Field>
                             <Label htmlFor="status">Filing Status</Label>
+
                             <ToggleGroup
                                 type="single"
                                 value={
@@ -70,6 +79,7 @@ export function FilingDialog({ children, leave }: FilingProp) {
                                 }
                                 onValueChange={(value) => {
                                     if (!value) return;
+
                                     form.setData(
                                         'status',
                                         value === 'completed',
@@ -78,7 +88,7 @@ export function FilingDialog({ children, leave }: FilingProp) {
                                 className="grid grid-cols-2 gap-3"
                             >
                                 <ToggleGroupItem
-                                    value={'completed'}
+                                    value="completed"
                                     className="flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 text-emerald-600 transition-all duration-300 hover:border-emerald-500/60 hover:bg-emerald-500/10 data-[state=on]:scale-[1.02] data-[state=on]:border-emerald-500 data-[state=on]:bg-emerald-500 data-[state=on]:text-white data-[state=on]:shadow-lg dark:text-emerald-400 dark:data-[state=on]:text-white"
                                 >
                                     <Check className="size-4" />
@@ -97,16 +107,20 @@ export function FilingDialog({ children, leave }: FilingProp) {
                                     </span>
                                 </ToggleGroupItem>
                             </ToggleGroup>
+
                             <FieldError className="text-red-700 dark:text-red-300">
                                 {form.errors.status}
                             </FieldError>
                         </Field>
+
                         <Field>
                             <Label htmlFor="remarks">Remarks</Label>
+
                             <Textarea
-                                onChange={(e) => {
-                                    form.setData('remarks', e.target.value);
-                                }}
+                                value={form.data.remarks}
+                                onChange={(e) =>
+                                    form.setData('remarks', e.target.value)
+                                }
                                 placeholder="Type your message here."
                             />
 
@@ -115,12 +129,14 @@ export function FilingDialog({ children, leave }: FilingProp) {
                             </FieldError>
                         </Field>
                     </FieldGroup>
+
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button variant="outline">Cancel</Button>
                         </DialogClose>
-                        <Button type="submit">
-                            {form.processing ? 'Submiting' : 'Submit'}
+
+                        <Button type="submit" disabled={form.processing}>
+                            {form.processing ? 'Submitting...' : 'Submit'}
                         </Button>
                     </DialogFooter>
                 </form>

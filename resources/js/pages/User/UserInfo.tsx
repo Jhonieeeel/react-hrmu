@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +9,7 @@ import { Head, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     ArrowRightLeft,
+    InfoIcon,
     Mail,
     Save,
     User2,
@@ -25,9 +27,12 @@ interface User {
 
 interface Props {
     user: User;
+    flash: {
+        success: string;
+    };
 }
 
-export default function UserInfo({ user }: Props) {
+export default function UserInfo({ user, flash }: Props) {
     const form = useForm({
         id: user.id,
         name: user.name,
@@ -53,6 +58,17 @@ export default function UserInfo({ user }: Props) {
             <Head title={`${user.name} - User Info`} />
 
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+                {flash.success && (
+                    <Alert className="border-green-200 bg-green-50 text-green-800">
+                        <InfoIcon className="text-green-600" />
+                        <AlertTitle className="text-green-800">
+                            Success
+                        </AlertTitle>
+                        <AlertDescription className="text-green-700">
+                            {flash.success}
+                        </AlertDescription>
+                    </Alert>
+                )}
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">

@@ -1,5 +1,6 @@
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddUserBalance from '@/components/User/AddUserBalance';
@@ -10,14 +11,17 @@ import getUsers from '@/queries/fetchUsers';
 import users from '@/routes/users';
 import { Head } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
-import { UserPlus, Users2, UserSquare } from 'lucide-react';
+import { UserIcon, UserPlus, Users2, UserSquare } from 'lucide-react';
 import { useState } from 'react';
 
 type PageProp = {
     users_data: [];
+    flash: {
+        success: string;
+    };
 };
 
-export default function User({ users_data }: PageProp) {
+export default function User({ users_data, flash }: PageProp) {
     const [page, setPage] = useState(1);
 
     const { data: users, isFetching } = useQuery(getUsers(page));
@@ -26,6 +30,17 @@ export default function User({ users_data }: PageProp) {
         <>
             <Head title="User" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
+                {flash.success && (
+                    <Alert className="border-green-200 bg-green-50 text-green-800">
+                        <UserIcon className="text-green-600" />
+                        <AlertTitle className="text-green-800">
+                            Success
+                        </AlertTitle>
+                        <AlertDescription className="text-green-700">
+                            {flash.success}
+                        </AlertDescription>
+                    </Alert>
+                )}
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold dark:text-accent">

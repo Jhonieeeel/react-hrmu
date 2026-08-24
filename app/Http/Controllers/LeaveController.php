@@ -29,7 +29,7 @@ class LeaveController extends Controller
     {
         $action->addInitialAccrual($initialAccrualDTO);
 
-        return to_route("leaves.index")->with('message', 'Initial Accrual Created Successfully.');
+        return to_route("leaves.index")->with('success', 'Initial Accrual Created Successfully.');
     }
 
     public function store(Request $request, LeaveDTO $leaveData, CreateLeaveAction $action, CheckDateRangeAction $checkDateRangeAction)
@@ -38,7 +38,7 @@ class LeaveController extends Controller
 
         $action->createLeaves($weekdays, $leaveData);
 
-        return back()->with('message', 'Filed Leave Successfully');
+        return back()->with('success', 'Filed Leave Successfully');
     }
 
     public function edit(Leave $leave)
@@ -58,6 +58,7 @@ class LeaveController extends Controller
 
     public function show(User $user, Request $request)
     {
+        info($user);
         return Inertia::render("Leave/UserBalance", [
             'user' => $user,
             'filters' => [
@@ -79,7 +80,7 @@ class LeaveController extends Controller
             'remarks' => $validated['remarks']
         ]);
 
-        return to_route("leaves.index")->with('message', 'Monthly Filing Updated');
+        return to_route("leaves.index")->with('success', 'Monthly Filing Updated');
     }
 
     public function userBalance(
@@ -112,12 +113,19 @@ class LeaveController extends Controller
         return response()->json($usersFiling($request));
     }
 
-    public function accrual(LeaveDTO $data, MonthlyAccrualAction $action)
+    public function accrual(Request $request, LeaveDTO $data, MonthlyAccrualAction $action)
     {
+        $filters = $request->input('filters');
+
         $action->handleAccrual($data);
 
-        return to_route("leaves.index")->with('message', 'Monthly Accrual Created Successfully.');
+        return to_route('leaves.show', [
+            'user' => $data->user_id,
+            'month' => $filters['month'],
+            'year' => $filters['year'],
+        ])->with('success', 'Monthly Accrual Added Successfully.');
     }
+
 
     public function export(Request $request, ExportPdfAction $export, ReplayBalanceAction $balanceAction)
     {

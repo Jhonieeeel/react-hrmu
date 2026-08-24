@@ -1,18 +1,36 @@
 import AddHolidayDialog from '@/components/Calendar/AddHolidayDialog';
 import LeaveCalendar from '@/components/Calendar/LeaveCalendar';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import calendar from '@/routes/calendar';
 import { User } from '@/types';
 import { Head } from '@inertiajs/react';
+import { Calendar } from 'lucide-react';
 
 type PageProps = {
     users: User;
+    flash: {
+        success: string;
+    };
 };
 
-export default function CalendarIndex({ users }: PageProps) {
+export default function CalendarIndex({ users, flash }: PageProps) {
     return (
         <>
             <Head title="Calendar" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
+                {/* Alert here */}
+                {flash.success && (
+                    <Alert className="border-green-200 bg-green-50 text-green-800">
+                        <Calendar className="text-green-600" />
+                        <AlertTitle className="text-green-800">
+                            Success
+                        </AlertTitle>
+                        <AlertDescription className="text-green-700">
+                            {flash.success}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold dark:text-accent">
