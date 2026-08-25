@@ -3,18 +3,19 @@ import DownloadButton from '@/components/Leave/ExportButton';
 import FilterButton from '@/components/Leave/FilterButton';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import useFlashToast from '@/components/useFlashToast';
 import getFilingOption from '@/queries/fetchMonthlyFiling';
 import { dashboard } from '@/routes';
-import { Head, router, useRemember } from '@inertiajs/react';
+import { FlashMessageProp } from '@/types';
+import { Head, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
-import { InfoIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 type PageProp = {
     flash: {
+        success: FlashMessageProp | null;
         downloadUrl: string;
-        success: string;
     };
 };
 
@@ -49,22 +50,12 @@ export default function Leaves({ flash }: PageProp) {
         [date.month, date.year],
     );
 
+    useFlashToast(flash);
+
     return (
         <>
             <Head title="Leaves" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
-                {flash.success && (
-                    <Alert className="border-green-200 bg-green-50 text-green-800">
-                        <InfoIcon className="text-green-600" />
-                        <AlertTitle className="text-green-800">
-                            Success
-                        </AlertTitle>
-                        <AlertDescription className="text-green-700">
-                            {flash.success}
-                        </AlertDescription>
-                    </Alert>
-                )}
-
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold dark:text-accent">

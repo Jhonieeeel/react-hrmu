@@ -32,7 +32,7 @@ createInertiaApp({
             <QueryClientProvider client={queryClient}>
                 <TooltipProvider delayDuration={0}>
                     {app}
-                    <Toaster />
+                    <Toaster richColors />
                 </TooltipProvider>
             </QueryClientProvider>
         );

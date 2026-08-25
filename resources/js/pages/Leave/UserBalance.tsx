@@ -7,33 +7,33 @@ import LeaveForm from '@/components/Leave/LeaveForm';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
 import UndertimeForm from '@/components/Leave/UndertimeForm';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import useFlashToast from '@/components/useFlashToast';
 import { readFiltersFromUrl } from '@/lib/utils';
 import getUserBalanceOption from '@/queries/fetchUserBalance';
 import leaves from '@/routes/leaves';
-import { User } from '@/types';
-import { Head, router, useRemember } from '@inertiajs/react';
+import { FlashMessageProp, User } from '@/types';
+import { Head, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
-    InfoIcon,
     NotebookPen,
     Plane,
     Scale,
     TableCellsMerge,
     TimerOffIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type PageProp = {
     user: User;
     flash: {
-        success: string;
+        success: FlashMessageProp | null;
     };
 };
 
@@ -67,22 +67,12 @@ export default function UserBalance({ user, flash }: PageProp) {
         user?.employee_type === 'new employee' ||
         user?.employee_type === 'transferee';
 
+    useFlashToast(flash);
+
     return (
         <>
             <Head title="Leaves" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
-                {flash.success && (
-                    <Alert className="border-green-200 bg-green-50 text-green-800">
-                        <InfoIcon className="text-green-600" />
-                        <AlertTitle className="text-green-800">
-                            Success
-                        </AlertTitle>
-                        <AlertDescription className="text-green-700">
-                            {flash.success}
-                        </AlertDescription>
-                    </Alert>
-                )}
-
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold dark:text-accent">

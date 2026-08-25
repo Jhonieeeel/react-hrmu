@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Str;
+
 class UserController extends Controller
 {
 
@@ -27,7 +29,10 @@ class UserController extends Controller
         ]);
 
         return to_route('users.index')
-            ->with('success', 'User updated successfully.');
+            ->with('success', [
+            'message' => 'User Updated Successfully',
+            'id' => Str::uuid()
+        ]);
     }
 
     public function show(User $user): Response
@@ -40,14 +45,20 @@ class UserController extends Controller
     public function filing(LeaveDTO $dto, AddMonthlyForm $filing) {
         $filing->monthyFiling($dto);
 
-        return to_route('users.index')->with('success', 'Monthly Filing Created!');
+        return to_route('users.index')->with('success', [
+            'message' => 'Monthly Filing Added Successfully',
+            'id' => Str::uuid()
+        ]);
     }
 
     public function balance(LeaveDTO $dto, AddUserBalanceAction $action) {
 
         $action($dto);
 
-        return to_route('users.index')->with('success', "$dto->leave_type balance has been added!");
+        return to_route('users.index')->with('success', [
+            'message' => "$dto->leave_type Added Successfully",
+            'id' => Str::uuid()
+        ]);
     }
 
 
@@ -62,7 +73,10 @@ class UserController extends Controller
         $action->execute($data);
 
         return to_route('users.index')
-            ->with('success', 'User created successfully.');
+            ->with('success', [
+            'message' => 'User Added Successfully',
+            'id' => Str::uuid()
+        ]);
     }
 
     // data

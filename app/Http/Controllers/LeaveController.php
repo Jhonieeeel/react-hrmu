@@ -17,6 +17,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
+
 
 class LeaveController extends Controller
 {
@@ -29,7 +31,10 @@ class LeaveController extends Controller
     {
         $action->addInitialAccrual($initialAccrualDTO);
 
-        return to_route("leaves.index")->with('success', 'Initial Accrual Created Successfully.');
+        return to_route("leaves.index")->with('success', [
+            'message' => 'Initial Accrual Added Successfully',
+            'id' => Str::uuid()
+        ]);
     }
 
     public function store(Request $request, LeaveDTO $leaveData, CreateLeaveAction $action, CheckDateRangeAction $checkDateRangeAction)
@@ -38,7 +43,10 @@ class LeaveController extends Controller
 
         $action->createLeaves($weekdays, $leaveData);
 
-        return back()->with('success', 'Filed Leave Successfully');
+        return back()->with('success', [
+            'message' => 'Filed Leave Successfully',
+            'id' => Str::uuid()
+        ]);
     }
 
     public function edit(Leave $leave)
@@ -123,7 +131,10 @@ class LeaveController extends Controller
             'user' => $data->user_id,
             'month' => $filters['month'],
             'year' => $filters['year'],
-        ])->with('success', 'Monthly Accrual Added Successfully.');
+        ])->with('success', [
+            'message' => 'Monthly Accrual Added Successfully',
+            'id' => Str::uuid()
+        ]);
     }
 
 

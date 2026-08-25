@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -33,6 +34,36 @@ export const UserColumns: ColumnDef<User>[] = [
             return <div className="text-left font-medium">Unknown</div>;
         },
     },
+    {
+        accessorKey: 'employee_type',
+        header: () => <div className="text-left">Employee Status</div>,
+        cell: ({ row }) => {
+            const employeeType = row.original.employee_type;
+
+            const styles = {
+                'new employee':
+                    'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+                transferee:
+                    'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+                old: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+            };
+
+            const css =
+                styles[employeeType as keyof typeof styles] ??
+                'bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300';
+
+            return (
+                <Badge className={css}>
+                    {employeeType === 'new employee'
+                        ? 'New Employee'
+                        : employeeType === 'transferee'
+                          ? 'Transferee'
+                          : 'Old Employee'}
+                </Badge>
+            );
+        },
+    },
+
     {
         id: 'actions',
         cell: ({ row }) => {

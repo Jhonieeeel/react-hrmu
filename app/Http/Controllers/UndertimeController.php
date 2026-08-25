@@ -21,6 +21,6 @@ class UndertimeController extends Controller
 
         $action($dto);
 
-        return to_route('leaves.show', $dto->user_id)->with('success', 'Undertime Created Successfully');
+        return to_route('leaves.show', $dto->user_id)->with('success', 'Undertime Added Successfully');
     }
 }

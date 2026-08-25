@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Leave;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,7 +11,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class LeaveFactory extends Factory
 {
-
     public static function balances(): array
     {
         return [
@@ -45,7 +45,40 @@ class LeaveFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'user_id' => User::factory(),
+            'leave_type' => 'vacation leave',
+            'event_type' => 'accrual',
+            'event_tag' => 'accrual',
+            'balance' => 0,
+            'starts_at' => '2023-01-01',
+            'ends_at' => '2023-01-31',
         ];
+    }
+
+    /**
+     * An accrual entry for a specific leave type and balance.
+     */
+    public function accrual(string $leaveType, float $balance): static
+    {
+        return $this->state(fn () => [
+            'leave_type' => $leaveType,
+            'event_type' => 'accrual',
+            'event_tag' => 'accrual',
+            'balance' => $balance,
+        ]);
+    }
+
+    /**
+     * The monthly filing placeholder entry.
+     */
+    public function monthlyFilingPlaceholder(): static
+    {
+        return $this->state(fn () => [
+            'leave_type' => 'monthly filing',
+            'event_type' => 'filing',
+            'event_tag' => 'filing',
+            'balance' => 0,
+            'status' => false,
+        ]);
     }
 }

@@ -1,36 +1,26 @@
 import AddHolidayDialog from '@/components/Calendar/AddHolidayDialog';
 import LeaveCalendar from '@/components/Calendar/LeaveCalendar';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import useFlashToast from '@/components/useFlashToast';
 import calendar from '@/routes/calendar';
-import { User } from '@/types';
+import { FlashMessageProp, User } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Calendar } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 type PageProps = {
     users: User;
     flash: {
-        success: string;
+        success: FlashMessageProp | null;
     };
 };
 
 export default function CalendarIndex({ users, flash }: PageProps) {
+    useFlashToast(flash);
+
     return (
         <>
             <Head title="Calendar" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
-                {/* Alert here */}
-                {flash.success && (
-                    <Alert className="border-green-200 bg-green-50 text-green-800">
-                        <Calendar className="text-green-600" />
-                        <AlertTitle className="text-green-800">
-                            Success
-                        </AlertTitle>
-                        <AlertDescription className="text-green-700">
-                            {flash.success}
-                        </AlertDescription>
-                    </Alert>
-                )}
-
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold dark:text-accent">

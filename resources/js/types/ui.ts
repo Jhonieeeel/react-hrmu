@@ -80,3 +80,8 @@ export type CalendarEvent = {
         };
     };
 };
+
+export type FlashMessageProp = {
+    message: string;
+    id: string;
+};

@@ -1,3 +1,4 @@
+import SuccessAlertMessage from '@/components/SuccessAlertMessage';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { dashboard } from '@/routes';
 import users from '@/routes/users';
+import { FlashMessageProp } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
@@ -17,6 +19,8 @@ import {
     UserRound,
     UsersRound,
 } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface User {
     id: number;
@@ -28,7 +32,7 @@ interface User {
 interface Props {
     user: User;
     flash: {
-        success: string;
+        success: FlashMessageProp | null;
     };
 }
 
@@ -48,27 +52,20 @@ export default function UserInfo({ user, flash }: Props) {
             preserveScroll: true,
             onSuccess: () => {
                 form.reset();
-                // form.reset('password', 'password_confirmation');
             },
         });
     }
+
+    useEffect(() => {
+        if (flash?.success)
+            toast.success(flash?.success?.message, { position: 'top-center' });
+    }, [flash?.success?.id]);
 
     return (
         <>
             <Head title={`${user.name} - User Info`} />
 
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                {flash.success && (
-                    <Alert className="border-green-200 bg-green-50 text-green-800">
-                        <InfoIcon className="text-green-600" />
-                        <AlertTitle className="text-green-800">
-                            Success
-                        </AlertTitle>
-                        <AlertDescription className="text-green-700">
-                            {flash.success}
-                        </AlertDescription>
-                    </Alert>
-                )}
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
