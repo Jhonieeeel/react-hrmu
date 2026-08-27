@@ -1,14 +1,16 @@
 import AddHolidayDialog from '@/components/Calendar/AddHolidayDialog';
+import { HolidayColumns } from '@/components/Calendar/columns/HolidayColumns';
 import LeaveCalendar from '@/components/Calendar/LeaveCalendar';
+import { DataTable } from '@/components/Leave/table/DataTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useFlashToast from '@/components/useFlashToast';
 import calendar from '@/routes/calendar';
 import { FlashMessageProp, User } from '@/types';
 import { Head } from '@inertiajs/react';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { Calendar1, CalendarOff } from 'lucide-react';
 
 type PageProps = {
-    users: User;
+    users: User[];
     flash: {
         success: FlashMessageProp | null;
     };
@@ -35,7 +37,24 @@ export default function CalendarIndex({ users, flash }: PageProps) {
                 </div>
                 <div className="relative min-h-screen flex-1 space-y-4 overflow-hidden rounded-xl border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
                     {/* Calendar Here */}
-                    <LeaveCalendar users={users} />
+                    <Tabs defaultValue="calendar" className="w-full">
+                        <TabsList variant="line">
+                            <TabsTrigger value="calendar">
+                                <Calendar1 />
+                                Calendar
+                            </TabsTrigger>
+                            <TabsTrigger value="holiday">
+                                <CalendarOff />
+                                Holiday List
+                            </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="calendar">
+                            <LeaveCalendar users={users} />
+                        </TabsContent>
+                        <TabsContent value="holiday">
+                            <DataTable data={[]} columns={HolidayColumns} />
+                        </TabsContent>
+                    </Tabs>
                 </div>
             </div>
         </>

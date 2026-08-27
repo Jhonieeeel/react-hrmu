@@ -85,3 +85,10 @@ export type FlashMessageProp = {
     message: string;
     id: string;
 };
+
+export type Holiday = {
+    id?: number;
+    holiday_name: string;
+    day: number;
+    month: number;
+};
