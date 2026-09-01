@@ -14,13 +14,14 @@ import {
 } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useFlashToast from '@/components/useFlashToast';
-import { readFiltersFromUrl } from '@/lib/utils';
+import { filteredDateName, readFiltersFromUrl } from '@/lib/utils';
 import getUserBalanceOption from '@/queries/fetchUserBalance';
 import leaves from '@/routes/leaves';
 import { FlashMessageProp, User } from '@/types';
 import { Head, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
+    Calendar,
     NotebookPen,
     Plane,
     Scale,
@@ -28,22 +29,40 @@ import {
     TimerOffIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 
 type PageProp = {
     user: User;
     flash: {
         success: FlashMessageProp | null;
     };
+    filters: { month: string; year: string };
 };
 
-export default function UserBalance({ user, flash }: PageProp) {
-    // const [date, setDate] = useState({
-    //     month: String(new Date().getMonth() + 1),
-    //     year: String(new Date().getFullYear()),
-    // });
+export default function UserBalance({ user, flash, filters }: PageProp) {
+    // const [date, setDate] = useRemember(
+    //     filters?.month && filters?.year
+    //         ? { month: String(filters.month), year: String(filters.year) }
+    //         : readFiltersFromUrl(),
+    //     'Filing:filters',
+    // );
 
-    const [date, setDate] = useRemember(readFiltersFromUrl(), 'Filing:filters');
+    const [date, setDate] = useState(
+        filters?.month && filters?.year
+            ? {
+                  month: String(filters.month),
+                  year: String(filters.year),
+              }
+            : readFiltersFromUrl(),
+    );
+
+    useEffect(() => {
+        if (filters?.month && filters?.year) {
+            setDate({
+                month: String(filters.month),
+                year: String(filters.year),
+            });
+        }
+    }, [filters?.month, filters?.year]);
 
     const [page, setPage] = useState(1);
 
@@ -73,6 +92,12 @@ export default function UserBalance({ user, flash }: PageProp) {
         <>
             <Head title="Leaves" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
+                <div>
+                    <h4 className="text-md flex items-center gap-1 font-bold">
+                        <Calendar />
+                        {filteredDateName(date.month, date.year)}
+                    </h4>
+                </div>
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold dark:text-accent">
@@ -96,7 +121,14 @@ export default function UserBalance({ user, flash }: PageProp) {
                         {/* {userData?.hasAccrual && (
                             <AccrualButton filters={date} user_id={user?.id} />
                         )} */}
-                        <FilterButton handleFilter={handleFilter} date={date} />
+
+                        {date && (
+                            <FilterButton
+                                key={`${date.month}-${date.year}`}
+                                handleFilter={handleFilter}
+                                date={date}
+                            />
+                        )}
                     </div>
                 </div>
                 <Tabs defaultValue="balance" className="space-y-6">

@@ -4,11 +4,13 @@ import FilterButton from '@/components/Leave/FilterButton';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
 import useFlashToast from '@/components/useFlashToast';
+import { filteredDateName } from '@/lib/utils';
 import getFilingOption from '@/queries/fetchMonthlyFiling';
 import { dashboard } from '@/routes';
 import { FlashMessageProp } from '@/types';
 import { Head, useRemember } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
+import { Calendar } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -56,8 +58,12 @@ export default function Leaves({ flash }: PageProp) {
         <>
             <Head title="Leaves" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
-                <div className="flex items-center justify-between">
-                    <div>
+                <div className="flex items-center justify-between space-y-3">
+                    <div className="space-y-1.5">
+                        <h4 className="text-md flex items-center gap-1 font-bold">
+                            <Calendar />
+                            {filteredDateName(date.month, date.year)}
+                        </h4>
                         <h1 className="text-4xl font-bold dark:text-accent">
                             Monthly Filing Overview
                         </h1>

@@ -66,13 +66,12 @@ class LeaveController extends Controller
 
     public function show(User $user, Request $request)
     {
-        info($user);
         return Inertia::render("Leave/UserBalance", [
             'user' => $user,
             'filters' => [
-                'month' => $request->month,
-                'year' => $request->year
-            ]
+                'month' => $request->input('month'),
+                'year' => $request->input('year'),
+            ],
         ]);
     }
 
@@ -127,10 +126,14 @@ class LeaveController extends Controller
 
         $action->handleAccrual($data);
 
+        $date = Carbon::parse($data->starts_at);
+
+        info($date->month);
+
         return to_route('leaves.show', [
             'user' => $data->user_id,
-            'month' => $filters['month'],
-            'year' => $filters['year'],
+            'month' => $date->month,
+            'year' => $date->year
         ])->with('success', [
             'message' => 'Monthly Accrual Added Successfully',
             'id' => Str::uuid()

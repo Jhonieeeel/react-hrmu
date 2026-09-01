@@ -3,7 +3,8 @@ import leaves from '@/routes/leaves';
 // import leave from '@/routes/leave';
 import { Filters } from '@/types';
 import { Button } from '@base-ui/react';
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { addMonths, endOfMonth, format, startOfMonth } from 'date-fns';
 import { CalendarPlus2Icon } from 'lucide-react';
 
@@ -23,6 +24,8 @@ export default function AccrualButton({
     const starts_at = format(startOfMonth(targetMonth), 'yyyy-MM-dd');
     const ends_at = format(endOfMonth(targetMonth), 'yyyy-MM-dd');
 
+    const query = useQueryClient();
+
     const form = useForm({
         user_id: user_id,
         leave_type: 'any leave',
@@ -37,7 +40,13 @@ export default function AccrualButton({
     function handleAccrual(e: React.MouseEvent) {
         e.preventDefault();
 
-        form.submit(leaves.accrual(form.data.user_id));
+        form.submit(leaves.accrual(form.data.user_id), {
+            onSuccess: () => {
+                query.invalidateQueries({
+                    queryKey: ['leaves'],
+                });
+            },
+        });
     }
 
     return (

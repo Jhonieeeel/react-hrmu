@@ -1,6 +1,7 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { clsx } from 'clsx';
 import type { ClassValue } from 'clsx';
+import { format } from 'date-fns';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -24,4 +25,8 @@ export function readFiltersFromUrl() {
         month: params.get('month') ?? String(now.getMonth() + 1),
         year: params.get('year') ?? String(now.getFullYear()),
     };
+}
+
+export function filteredDateName(month: string, year: string) {
+    return format(new Date(Number(year), Number(month) - 1, 1), 'MMMM yyyy');
 }
