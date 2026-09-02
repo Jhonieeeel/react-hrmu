@@ -58,7 +58,7 @@ export default function LeaveForm({ user }: FormProp) {
             ...data,
             event_tag: ['cto', 'offset'].includes(form.data.leave_type)
                 ? 'cto'
-                : 'leave',
+                : form.data.event_tag,
         }));
 
         form.submit(leaves.store(), {
@@ -94,14 +94,15 @@ export default function LeaveForm({ user }: FormProp) {
                                 value: event.leave_type.toLowerCase(),
                                 label: event.leave_type,
                             }))}
-                            value={form.data.leave_type}
+                            value={form.data.leave_type.toLowerCase()}
                             onValueChange={(value: string) => {
                                 form.setData('leave_type', value);
                                 if (
                                     String(value).toLowerCase() ===
                                     'force leave'
-                                )
+                                ) {
                                     form.setData('event_tag', 'vacation leave');
+                                }
                             }}
                             placeholder="Select leave type"
                         />

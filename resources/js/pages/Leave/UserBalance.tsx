@@ -81,6 +81,8 @@ export default function UserBalance({ user, flash, filters }: PageProp) {
         getUserBalanceOption(date.month, date.year, user.id, page),
     );
 
+    console.log(userData);
+
     const transactions = userData?.transactions;
     const needsInitialAccrual =
         user?.employee_type === 'new employee' ||

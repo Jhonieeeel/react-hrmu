@@ -1,3 +1,10 @@
+import users_balance from '@/routes/users_balance';
+import { User } from '@/types';
+import { useForm } from '@inertiajs/react';
+import { add_balance_types } from '../Leave/constants/constants';
+import DatePicker from '../Leave/DatePicker';
+import SelectCombobox from '../Leave/SelectCombobox';
+import { Button } from '../ui/button';
 import {
     Field,
     FieldError,
@@ -5,16 +12,7 @@ import {
     FieldLabel,
     FieldSet,
 } from '../ui/field';
-import { event_types } from '../Leave/constants/constants';
 import { Input } from '../ui/input';
-import DatePicker from '../Leave/DatePicker';
-import SelectCombobox from '../Leave/SelectCombobox';
-import { Button } from '../ui/button';
-import { User } from '@/types';
-import leaves from '@/routes/leaves';
-import { useForm } from '@inertiajs/react';
-import users from '@/routes/users';
-import users_balance from '@/routes/users_balance';
 
 type PageProp = {
     users_data: User[];
@@ -76,20 +74,13 @@ export default function AddUserBalance({ users_data }: PageProp) {
                         <FieldLabel>Leave Type</FieldLabel>
 
                         <SelectCombobox
-                            items={event_types.map((u) => ({
+                            items={add_balance_types.map((u) => ({
                                 value: u.leave_type.toLowerCase(),
                                 label: u.leave_type,
                             }))}
                             value={form.data.leave_type}
                             onValueChange={(value: string) => {
                                 form.setData('leave_type', value);
-
-                                if (
-                                    String(value).toLowerCase() ===
-                                    'force leave'
-                                ) {
-                                    form.setData('event_tag', 'vacation leave');
-                                }
                             }}
                             placeholder="Select leave type"
                         />

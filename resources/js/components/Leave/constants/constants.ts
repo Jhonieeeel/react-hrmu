@@ -21,6 +21,12 @@ export const event_types: EventType[] = [
     { id: 15, leave_type: 'Offset' },
 ];
 
+export const add_balance_types: EventType[] = [
+    { id: 1, leave_type: 'Vacation Leave' },
+    { id: 2, leave_type: 'Sick Leave' },
+    { id: 3, leave_type: 'Force Leave' },
+];
+
 export const calendarTypes = [
     'maternity leave',
     'study leave',

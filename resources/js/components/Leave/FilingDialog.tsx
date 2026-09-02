@@ -59,10 +59,9 @@ export function FilingDialog({ children, leave }: FilingProp) {
             <DialogContent className="sm:max-w-sm">
                 <form onSubmit={handleSubmit} className="space-y-3">
                     <DialogHeader>
-                        <DialogTitle>Edit profile</DialogTitle>
+                        <DialogTitle>{leave.user?.name} </DialogTitle>
                         <DialogDescription>
-                            Make changes to your profile here. Click save when
-                            you&apos;re done.
+                            Fill the status to start the accrual
                         </DialogDescription>
                     </DialogHeader>
 
