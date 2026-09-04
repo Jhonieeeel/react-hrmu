@@ -25,6 +25,9 @@ class ExportPdfAction
             $leaves   = $replay['leaves'];
             $date = Carbon::parse($replay['date']);
 
+
+            $activeSheet->setCellValue("A2", "As of {$date?->format('F Y')}");
+
             // name
             $activeSheet->setCellValue("B$cellStart", $name);
 

@@ -235,6 +235,12 @@ class ReplayBalanceAction
 
         $totalForceLeaveDeduction = 0;
 
+        $current_balance = $current->where('leave_type', 'force leave')
+                                        ->where('event_type' , 'accrual')
+                                        ->where('event_tag', 'accrual')
+                                        ->sum('balance');
+
+
         for ($year = 2023; $year < $date->year; $year++) {
 
             $used = abs(
@@ -246,12 +252,12 @@ class ReplayBalanceAction
                     ->sum('balance')
             );
 
-            $unused = max(0, 5 - $used);
+            $unused = max(0, $current_balance - $used);
 
             $totalForceLeaveDeduction += $unused;
         }
 
-        return $balances->map(function ($balance) use ($date, $totalForceLeaveDeduction, $current) {
+        return $balances->map(function ($balance) use ($date, $totalForceLeaveDeduction, $current, $current_balance) {
 
             if ($balance['leave_type'] === 'vacation leave') {
                 $balance['previous'] -= $totalForceLeaveDeduction;
@@ -265,7 +271,7 @@ class ReplayBalanceAction
 
                 case 'vacation leave':
 
-                    $balance['monthly_accrual'] = 1.25;
+                    $balance['monthly_accrual'] = 1.25; // monthly accrual
 
                     $balance['estimated'] = $balance['current'] + 1.25;
 
@@ -280,7 +286,7 @@ class ReplayBalanceAction
                                 ->sum('balance')
                         );
 
-                        $unused = max(0, 5 - $forceLeaveUsed);
+                        $unused = max(0, $current_balance - $forceLeaveUsed);
 
                         $balance['estimated'] -= $unused;
                     }
@@ -304,14 +310,13 @@ class ReplayBalanceAction
                             ->sum('balance')
                     );
 
-                    $balance['previous'] = max(0, 5 - $forceLeaveUsed);
-                    $balance['current'] = max(0, 5 - $forceLeaveUsed);
+                    $balance['previous'] = max(0,  $current_balance - $forceLeaveUsed);
+                    $balance['current'] = max(0, $current_balance - $forceLeaveUsed);
                     $balance['monthly_accrual'] = 0;
 
                     $balance['estimated'] = $date->month === 12
-                        ? 5
+                        ? 5 // expectation balance
                         : $balance['current'];
-
                     break;
             }
 
