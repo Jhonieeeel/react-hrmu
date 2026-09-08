@@ -55,19 +55,18 @@ export function FilingDialog({ children, leave }: FilingProp) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-
-            <DialogContent className="sm:max-w-sm">
-                <form onSubmit={handleSubmit} className="space-y-3">
+            <DialogContent className="sm:max-w-md">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <DialogHeader>
-                        <DialogTitle>{leave.user?.name} </DialogTitle>
+                        <DialogTitle>{leave.user?.name}</DialogTitle>
                         <DialogDescription>
-                            Fill the status to start the accrual
+                            Update the filing status for this leave.
                         </DialogDescription>
                     </DialogHeader>
 
                     <FieldGroup>
                         <Field>
-                            <Label htmlFor="status">Filing Status</Label>
+                            <Label>Filing Status</Label>
 
                             <ToggleGroup
                                 type="single"
@@ -84,58 +83,54 @@ export function FilingDialog({ children, leave }: FilingProp) {
                                         value === 'completed',
                                     );
                                 }}
-                                className="grid grid-cols-2 gap-3"
+                                className="grid grid-cols-2 gap-2"
                             >
                                 <ToggleGroupItem
                                     value="completed"
-                                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 text-emerald-600 transition-all duration-300 hover:border-emerald-500/60 hover:bg-emerald-500/10 data-[state=on]:scale-[1.02] data-[state=on]:border-emerald-500 data-[state=on]:bg-emerald-500 data-[state=on]:text-white data-[state=on]:shadow-lg dark:text-emerald-400 dark:data-[state=on]:text-white"
+                                    className="h-10 rounded-md border text-sm data-[state=on]:border-emerald-500 data-[state=on]:bg-emerald-500 data-[state=on]:text-white"
                                 >
                                     <Check className="size-4" />
-                                    <span className="font-medium">
-                                        Completed
-                                    </span>
+                                    Completed
                                 </ToggleGroupItem>
 
                                 <ToggleGroupItem
                                     value="incomplete"
-                                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-destructive/30 text-destructive transition-all duration-300 hover:border-destructive/60 hover:bg-destructive/10 data-[state=on]:scale-[1.02] data-[state=on]:border-destructive data-[state=on]:bg-destructive data-[state=on]:text-destructive-foreground data-[state=on]:shadow-lg"
+                                    className="h-10 rounded-md border text-sm data-[state=on]:border-destructive data-[state=on]:bg-destructive data-[state=on]:text-destructive-foreground"
                                 >
                                     <X className="size-4" />
-                                    <span className="font-medium">
-                                        Incomplete
-                                    </span>
+                                    Incomplete
                                 </ToggleGroupItem>
                             </ToggleGroup>
 
-                            <FieldError className="text-red-700 dark:text-red-300">
-                                {form.errors.status}
-                            </FieldError>
+                            <FieldError>{form.errors.status}</FieldError>
                         </Field>
 
                         <Field>
                             <Label htmlFor="remarks">Remarks</Label>
 
                             <Textarea
+                                id="remarks"
                                 value={form.data.remarks}
                                 onChange={(e) =>
                                     form.setData('remarks', e.target.value)
                                 }
-                                placeholder="Type your message here."
+                                placeholder="Add a remark (optional)"
+                                rows={3}
                             />
 
-                            <FieldError className="text-red-700 dark:text-red-300">
-                                {form.errors.remarks}
-                            </FieldError>
+                            <FieldError>{form.errors.remarks}</FieldError>
                         </Field>
                     </FieldGroup>
 
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                         <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
                         </DialogClose>
 
                         <Button type="submit" disabled={form.processing}>
-                            {form.processing ? 'Submitting...' : 'Submit'}
+                            {form.processing ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </DialogFooter>
                 </form>

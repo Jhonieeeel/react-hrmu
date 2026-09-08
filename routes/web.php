@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\PassSlipController;
 use App\Http\Controllers\UndertimeController;
@@ -10,7 +11,9 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    // Route::inertia('dashboard', 'dashboard')->name('dashboard');
+
+    Route::get("dashboard", [DashboardController::class, 'index'])->name('dashboard');
 
     // export
     Route::get("leaves/exporting_excel", [LeaveController::class, 'export'])->name('leaves.export');
@@ -28,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post("leaves/create_leave", [LeaveController::class, 'store'])->name('leaves.store');
     Route::post("leaves/undertim/create_undertime", [UndertimeController::class, 'store'])->name('undertime.store');
     Route::put("leaves/{leave}/update_undertime", [UndertimeController::class, 'update'])->name('undertime.update');
+    Route::delete("leaves/{leave}/delete", [LeaveController::class, 'destroy'])->name('leaves.destroy');
     Route::post("leaves/{user}/create_accrual", [LeaveController::class, 'accrual'])->name('leaves.accrual');
     Route::post("users/create", [UserController::class, 'store'])->name('users.store');
     Route::post("users/balance/create", [UserController::class, 'balance'])->name('users_balance.store');

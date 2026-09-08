@@ -97,7 +97,7 @@ export default function BalanceCard({ balance, isFetching }: BalanceProp) {
 
                             <div className="rounded-lg border border-border bg-muted/40 p-3">
                                 <p className="text-xs text-muted-foreground">
-                                    Estimated
+                                    Estimated / Remaining
                                 </p>
 
                                 <p className="text-lg font-semibold">

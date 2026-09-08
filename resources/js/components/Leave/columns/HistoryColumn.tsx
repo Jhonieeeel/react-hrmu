@@ -35,8 +35,9 @@ import {
 import { FilingDialog } from '../FilingDialog';
 import { EditHistoryDialog } from '../EditHistoryDialog';
 import { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import leaves from '@/routes/leaves';
+import { useQueryClient } from '@tanstack/react-query';
 
 const badgeType: Record<string, LucideIcon> = {
     'vacation leave': Plane,
@@ -66,7 +67,9 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
         cell: ({ row }) => {
             const { event_tag, leave_type, event_type } = row.original;
 
-            const leaveName = ['undertime', 'tardiness'].includes(event_tag)
+            const leaveName = ['undertime', 'tardiness', 'absent'].includes(
+                event_tag,
+            )
                 ? event_tag
                 : leave_type.toLowerCase();
 
@@ -167,13 +170,19 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
     {
         id: 'actions',
         cell: ({ row }) => {
-            const leave = row.original;
+            const leave = row.original as Leave;
 
-            const isTimeRecord = ['tardiness', 'undertime'].includes(
-                leave.event_tag,
-            );
+            const queryClient = useQueryClient();
 
-            const [open, setOpen] = useState(false);
+            function handleDelete() {
+                router.delete(leaves.destroy({ leave: leave.id }).url, {
+                    onSuccess: () => {
+                        queryClient.invalidateQueries({
+                            queryKey: ['leaves'],
+                        });
+                    },
+                });
+            }
 
             return (
                 <>
@@ -187,17 +196,17 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {leave.event_type === 'deduction' && (
-                                <DropdownMenuItem asChild>
-                                    <Link
-                                        href={leaves.edit(leave)}
-                                        target="_blank'"
-                                    >
-                                        Edit
-                                    </Link>
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={leaves.edit(leave)}
+                                    target="_blank'"
+                                >
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleDelete}>
+                                Delete
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                         </DropdownMenuContent>
                     </DropdownMenu>

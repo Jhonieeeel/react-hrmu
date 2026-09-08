@@ -59,6 +59,10 @@ export default function LeaveForm({ user }: FormProp) {
             event_tag: ['cto', 'offset'].includes(form.data.leave_type)
                 ? 'cto'
                 : form.data.event_tag,
+            leave_type:
+                form.data.event_tag === 'absent'
+                    ? 'vacation leave'
+                    : form.data.leave_type,
         }));
 
         form.submit(leaves.store(), {
@@ -102,6 +106,10 @@ export default function LeaveForm({ user }: FormProp) {
                                     'force leave'
                                 ) {
                                     form.setData('event_tag', 'vacation leave');
+                                } else if (
+                                    String(value).toLowerCase() === 'absent'
+                                ) {
+                                    form.setData('event_tag', 'absent');
                                 }
                             }}
                             placeholder="Select leave type"

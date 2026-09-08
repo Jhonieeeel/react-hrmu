@@ -22,6 +22,14 @@ use Illuminate\Support\Str;
 
 class LeaveController extends Controller
 {
+
+    public function destroy(Leave $leave)
+    {
+        $leave->delete();
+
+        return back()->with('success', 'Deleted Successfully!');
+    }
+
     public function index()
     {
         return Inertia::render("Leave/index");

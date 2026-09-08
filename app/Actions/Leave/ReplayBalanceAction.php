@@ -200,8 +200,10 @@ class ReplayBalanceAction
             ->map(function ($type) use ($current, $previous, $currentYear) {
 
                 $flAsVacationLeave = 0;
+                info("DATE: ".$currentYear);
                 if ($type === 'vacation leave') {
                     $flAsVacationLeave = $current->where('leave_type', 'force leave')->where('event_tag', $type)->sum('balance');
+
                 }
 
                 return [

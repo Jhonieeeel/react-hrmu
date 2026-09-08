@@ -19,6 +19,7 @@ export const event_types: EventType[] = [
     { id: 13, leave_type: 'Adoption Leave' },
     { id: 14, leave_type: 'CTO' },
     { id: 15, leave_type: 'Offset' },
+    { id: 16, leave_type: 'Absent' },
 ];
 
 export const add_balance_types: EventType[] = [

@@ -164,6 +164,12 @@ export default function UndertimeForm({ user }: UndertimeProp) {
                             </Button>
 
                             <Button
+                                disabled={
+                                    form.processing ||
+                                    !form.data.event_tag ||
+                                    !form.data.starts_at ||
+                                    !form.data.ends_at
+                                }
                                 type="submit"
                                 className="h-9 rounded-md bg-foreground px-3 text-background transition-colors hover:bg-foreground/90 dark:bg-accent dark:text-accent-foreground dark:hover:bg-accent/80"
                             >
