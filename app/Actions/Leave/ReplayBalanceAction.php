@@ -167,46 +167,47 @@ class ReplayBalanceAction
     }
 
     protected static function deductionEvents(Collection $currentUndertime): array
-    {
-        $undertimeCount = $currentUndertime->where('event_tag', 'undertime')->count();
-        $tardinessCount = $currentUndertime->where('event_tag', 'tardiness')->count();
+{
+    $undertimeCount = $currentUndertime->where('event_tag', 'undertime')->count();
+    $tardinessCount = $currentUndertime->where('event_tag', 'tardiness')->count();
 
-        $events = $currentUndertime->map(function ($event) {
+    $events = $currentUndertime->map(function ($event) {
 
-            $startsAt = Carbon::parse($event->starts_at);
-            $endsAt = Carbon::parse($event->ends_at);
+        $startsAt = Carbon::parse($event->starts_at);
+        $endsAt = Carbon::parse($event->ends_at);
 
-            $diffMinutes = $startsAt->diffInMinutes($endsAt);
+        $diffMinutes = $startsAt->diffInMinutes($endsAt);
 
-            $hours = intdiv($diffMinutes, 60);
-            $minutes = $diffMinutes % 60;
+        $hours = intdiv($diffMinutes, 60);
+        $minutes = $diffMinutes % 60;
 
-            $durationParts = [];
-            if ($hours > 0) {
-                $durationParts[] = $hours . ' ' . ($hours === 1 ? 'hr' : 'hrs');
-            }
-            if ($minutes > 0 || $hours === 0) {
-                $durationParts[] = $minutes . ' ' . ($minutes === 1 ? 'min' : 'mins');
-            }
-            $durationText = implode(' ', $durationParts);
+        $durationParts = [];
+        if ($hours > 0) {
+            $durationParts[] = $hours . ' ' . ($hours === 1 ? 'hr' : 'hrs');
+        }
+        if ($minutes > 0 || $hours === 0) {
+            $durationParts[] = $minutes . ' ' . ($minutes === 1 ? 'min' : 'mins');
+        }
+        $durationText = implode(' ', $durationParts);
 
-            $tag = Str::upper(Str::substr($event->event_tag, 0, 1));
-
-            return [
-                'label' => $startsAt->format('M j') . ', ' . $durationText . ' ' . $tag,
-                'minutes' => $minutes,
-                'hours' => $hours,
-                'day' => $startsAt->day,
-                'deductionAmount' => $event->balance,
-            ];
-        })->values()->toArray();
+        $tag = Str::upper(Str::substr($event->event_tag, 0, 1));
 
         return [
-            'events' => $events,
-            'undertimeCount' => $undertimeCount,
-            'tardinessCount' => $tardinessCount,
+            'label' => $startsAt->format('M j') . ', ' . $durationText . ' ' . $tag,
+            'minutes' => $minutes,
+            'hours' => $hours,
+            'day' => $startsAt->day,
+            'month_key' => $startsAt->format('Y-m'), // <-- needed to separate pay periods correctly
+            'deductionAmount' => $event->balance,
         ];
-    }
+    })->values()->toArray();
+
+    return [
+        'events' => $events,
+        'undertimeCount' => $undertimeCount,
+        'tardinessCount' => $tardinessCount,
+    ];
+}
 
 
     protected static function minutesToDayEquivalent(int $totalMinutes): float
@@ -227,27 +228,28 @@ class ReplayBalanceAction
     }
 
     protected static function totalUndertime(Collection $current): float
-    {
-        $currentEvents = self::deductionEvents(
-            $current->whereIn('event_tag', ['tardiness', 'undertime'])
-        );
+{
+    $currentEvents = self::deductionEvents(
+        $current->whereIn('event_tag', ['tardiness', 'undertime'])
+    );
 
-        $firstHalfMinutes = 0;
-        $secondHalfMinutes = 0;
+    $periodBuckets = [];
 
-        foreach ($currentEvents['events'] as $event) {
-            $totalEventMinutes = ($event['hours'] * 60) + $event['minutes'];
+    foreach ($currentEvents['events'] as $event) {
+        $totalEventMinutes = ($event['hours'] * 60) + $event['minutes'];
+        $period = $event['day'] <= 15 ? 1 : 2;
+        $bucketKey = $event['month_key'] . '-' . $period;
 
-            if ($event['day'] <= 15) {
-                $firstHalfMinutes += $totalEventMinutes;
-            } else {
-                $secondHalfMinutes += $totalEventMinutes;
-            }
-        }
-
-        return self::minutesToDayEquivalent($firstHalfMinutes)
-            + self::minutesToDayEquivalent($secondHalfMinutes);
+        $periodBuckets[$bucketKey] = ($periodBuckets[$bucketKey] ?? 0) + $totalEventMinutes;
     }
+
+    $total = 0.0;
+    foreach ($periodBuckets as $minutes) {
+        $total += self::minutesToDayEquivalent($minutes);
+    }
+
+    return $total;
+}
 
     protected static function replayBalances(
         Collection $current,

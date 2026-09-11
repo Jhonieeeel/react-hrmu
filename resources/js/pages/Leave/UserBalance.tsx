@@ -18,7 +18,7 @@ import { filteredDateName, readFiltersFromUrl } from '@/lib/utils';
 import getUserBalanceOption from '@/queries/fetchUserBalance';
 import leaves from '@/routes/leaves';
 import { FlashMessageProp, User } from '@/types';
-import { Head, useRemember } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Calendar,
@@ -80,8 +80,6 @@ export default function UserBalance({ user, flash, filters }: PageProp) {
     const { data: userData, isFetching } = useQuery(
         getUserBalanceOption(date.month, date.year, user.id, page),
     );
-
-    console.log(userData);
 
     const transactions = userData?.transactions;
     const needsInitialAccrual =
