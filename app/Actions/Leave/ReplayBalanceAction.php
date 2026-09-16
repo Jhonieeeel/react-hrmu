@@ -40,6 +40,7 @@ class ReplayBalanceAction
         8 => 1.000,
     ];
 
+    // query all transaction fom user
     public static function UserBalance(Request $request, User $user): array
     {
         $date = $request->filled('month') && $request->filled('year')
@@ -68,6 +69,8 @@ class ReplayBalanceAction
             ->toArray();
     }
 
+
+    // query all transactions from users
     public static function UsersBalances(Carbon $date, Collection $users): array
     {
         $userIds = $users->pluck('id');
@@ -139,6 +142,7 @@ class ReplayBalanceAction
         })->toArray();
     }
 
+    // query all leaves
     protected static function filedLeaves(Collection $leavesCollection): array
     {
         return $leavesCollection->map(function ($leave) {
@@ -262,6 +266,8 @@ class ReplayBalanceAction
             'vacation leave',
             'sick leave',
             'force leave',
+            'wellness leave',
+            'special privilege leave'
         ];
 
         $currentYear = $current->filter(
@@ -273,11 +279,14 @@ class ReplayBalanceAction
 
                 $flAsVacationLeave = 0;
                 $undertimeAsVacationLeave = 0;
+                $absentAsVacationLeave = 0;
 
                 if ($type === 'vacation leave') {
                     $flAsVacationLeave = $current->where('leave_type', 'force leave')->where('event_tag', $type)->sum('balance');
 
                     $undertimeAsVacationLeave = self::totalUndertime($current);
+
+
                 }
 
                 return [
@@ -290,7 +299,7 @@ class ReplayBalanceAction
                     'current' => $current
                         ->where('leave_type', $type)
                         ->where('event_type', 'accrual')
-                        ->sum('balance') + $flAsVacationLeave + $undertimeAsVacationLeave,
+                        ->sum('balance') + $flAsVacationLeave + $undertimeAsVacationLeave + $absentAsVacationLeave,
 
                     'used' => abs(
                         $currentYear
@@ -374,6 +383,20 @@ class ReplayBalanceAction
 
                     $balance['monthly_accrual'] = 1.25;
                     $balance['estimated'] += 1.25;
+
+                    break;
+
+                case 'wellness leave':
+
+                    $balance['monthly accrual'] = $date->month === 12 ? 3 : 0;
+                    $balance['estimated'] = $date->month === 12 ? 3 : $balance['current'];
+
+                    break;
+
+                case 'special privilege leave':
+
+                    $balance['monthly accrual'] = $date->month === 12 ? 3 : 0;
+                    $balance['estimated'] = $date->month === 12 ? 3 : $balance['current'];
 
                     break;
 

@@ -151,14 +151,14 @@ export default function UserBalance({ user, flash, filters }: PageProp) {
 
                     {/* Balance */}
                     <TabsContent value="balance">
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            {userData?.balances?.map((balance) => (
+                        <div className="grid gap-4 md:grid-cols-3">
+                            {userData?.balances?.map((balance, index) => (
                                 <BalanceCard
                                     key={balance.leave_type}
                                     balance={balance}
                                     isFetching={isFetching}
                                 />
-                            ))}
+                            ))}{' '}
                         </div>
                     </TabsContent>
 

@@ -16,16 +16,23 @@ type Balance = {
 type BalanceProp = {
     balance: Balance;
     isFetching: boolean;
+    className: string;
 };
 
-export default function BalanceCard({ balance, isFetching }: BalanceProp) {
+export default function BalanceCard({
+    balance,
+    isFetching,
+    className,
+}: BalanceProp) {
     const usagePercentage =
         balance.current + balance.used > 0
             ? (balance.used / (balance.current + balance.used)) * 100
             : 0;
 
     return (
-        <Card className="w-full border-border bg-card shadow-sm">
+        <Card
+            className={`relative w-full border-border bg-card shadow-sm ${className ?? ''}`}
+        >
             {isFetching ? (
                 <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/50 backdrop-blur-sm">
                     <Spinner className="h-8 w-8" />
@@ -57,8 +64,7 @@ export default function BalanceCard({ balance, isFetching }: BalanceProp) {
 
                             <div className="flex items-end gap-2">
                                 <span className="text-4xl font-bold text-primary">
-                                    {balance.current.toFixed(3) ??
-                                        balance.current}
+                                    {balance.current.toFixed(3)}
                                 </span>
 
                                 <span className="mb-1 text-sm text-muted-foreground">

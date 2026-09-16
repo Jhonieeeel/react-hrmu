@@ -17,6 +17,8 @@ class MonthlyAccrualAction
 
         if (Carbon::parse($data->ends_at)->month === 1) {
             $this->forceLeaveAccrual($data);
+            $this->wellnessLeaveAccrual($data);
+            $this->specialAccrual($data);
         }
     }
 
@@ -61,7 +63,7 @@ class MonthlyAccrualAction
             'user_id' => $data->user_id,
             'leave_type' => 'vacation leave',
             'event_type' => $data->event_type,
-            'event_tag' => null,
+            'event_tag' => 'accrual',
             'balance' => 1.25,
             'starts_at' => $data->starts_at,
             'ends_at' => $data->ends_at
@@ -74,7 +76,7 @@ class MonthlyAccrualAction
             'user_id' => $data->user_id,
             'leave_type' => 'sick leave',
             'event_type' => $data->event_type,
-            'event_tag' => null,
+            'event_tag' => 'accrual',
             'balance' => 1.25,
             'starts_at' => $data->starts_at,
             'ends_at' => $data->ends_at
@@ -87,7 +89,7 @@ class MonthlyAccrualAction
             'user_id' => $data->user_id,
             'leave_type' => 'force leave',
             'event_type' => $data->event_type,
-            'event_tag' => null,
+            'event_tag' => 'accrual',
             'balance' => 5,
             'starts_at' => $data->starts_at,
             'ends_at' => $data->ends_at
@@ -105,6 +107,30 @@ class MonthlyAccrualAction
             'starts_at' => $data->starts_at,
             'ends_at' => $data->ends_at,
             'status' => false
+        ]);
+    }
+
+    public function wellnessLeaveAccrual(LeaveDTO $data) {
+        Leave::create([
+            'user_id' => $data->user_id,
+            'leave_type' => 'wellness leave',
+            'event_type' => $data->event_type,
+            'event_tag' => 'accrual',
+            'balance' => 3,
+            'starts_at' => $data->starts_at,
+            'ends_at' => $data->ends_at
+        ]);
+    }
+
+    public function specialAccrual(LeaveDTO $data) {
+        Leave::create([
+            'user_id' => $data->user_id,
+            'leave_type' => 'special privilege leave',
+            'event_type' => $data->event_type,
+            'event_tag' => 'accrual',
+            'balance' => 3,
+            'starts_at' => $data->starts_at,
+            'ends_at' => $data->ends_at
         ]);
     }
 }
