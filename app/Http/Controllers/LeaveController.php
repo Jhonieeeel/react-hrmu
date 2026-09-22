@@ -95,7 +95,10 @@ class LeaveController extends Controller
             'remarks' => $validated['remarks']
         ]);
 
-        return to_route("leaves.index")->with('success', 'Monthly Filing Updated');
+        return to_route("leaves.index")->with('success', [
+            'message' =>  'Monthly Filing Updated',
+            'id' => Str::uuid()
+        ]);
     }
 
     public function userBalance(

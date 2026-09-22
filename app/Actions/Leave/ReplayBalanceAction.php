@@ -14,18 +14,66 @@ class ReplayBalanceAction
     protected $leaveTypes = ['vacation leave', 'sick leave', 'force leave'];
 
     protected static array $minutesConversion = [
-        0 => 0.000, 1 => 0.002, 2 => 0.004, 3 => 0.006, 4 => 0.008, 5 => 0.010,
-        6 => 0.012, 7 => 0.015, 8 => 0.017, 9 => 0.019, 10 => 0.021,
-        11 => 0.023, 12 => 0.025, 13 => 0.027, 14 => 0.029, 15 => 0.031,
-        16 => 0.033, 17 => 0.035, 18 => 0.037, 19 => 0.040, 20 => 0.042,
-        21 => 0.044, 22 => 0.046, 23 => 0.048, 24 => 0.050, 25 => 0.052,
-        26 => 0.054, 27 => 0.056, 28 => 0.058, 29 => 0.060, 30 => 0.063,
-        31 => 0.065, 32 => 0.067, 33 => 0.069, 34 => 0.071, 35 => 0.073,
-        36 => 0.075, 37 => 0.077, 38 => 0.079, 39 => 0.081, 40 => 0.083,
-        41 => 0.085, 42 => 0.087, 43 => 0.090, 44 => 0.092, 45 => 0.094,
-        46 => 0.096, 47 => 0.098, 48 => 0.100, 49 => 0.102, 50 => 0.104,
-        51 => 0.106, 52 => 0.108, 53 => 0.110, 54 => 0.112, 55 => 0.115,
-        56 => 0.117, 57 => 0.119, 58 => 0.121, 59 => 0.123,
+        0 => 0.000,
+        1 => 0.002,
+        2 => 0.004,
+        3 => 0.006,
+        4 => 0.008,
+        5 => 0.010,
+        6 => 0.012,
+        7 => 0.015,
+        8 => 0.017,
+        9 => 0.019,
+        10 => 0.021,
+        11 => 0.023,
+        12 => 0.025,
+        13 => 0.027,
+        14 => 0.029,
+        15 => 0.031,
+        16 => 0.033,
+        17 => 0.035,
+        18 => 0.037,
+        19 => 0.040,
+        20 => 0.042,
+        21 => 0.044,
+        22 => 0.046,
+        23 => 0.048,
+        24 => 0.050,
+        25 => 0.052,
+        26 => 0.054,
+        27 => 0.056,
+        28 => 0.058,
+        29 => 0.060,
+        30 => 0.063,
+        31 => 0.065,
+        32 => 0.067,
+        33 => 0.069,
+        34 => 0.071,
+        35 => 0.073,
+        36 => 0.075,
+        37 => 0.077,
+        38 => 0.079,
+        39 => 0.081,
+        40 => 0.083,
+        41 => 0.085,
+        42 => 0.087,
+        43 => 0.090,
+        44 => 0.092,
+        45 => 0.094,
+        46 => 0.096,
+        47 => 0.098,
+        48 => 0.100,
+        49 => 0.102,
+        50 => 0.104,
+        51 => 0.106,
+        52 => 0.108,
+        53 => 0.110,
+        54 => 0.112,
+        55 => 0.115,
+        56 => 0.117,
+        57 => 0.119,
+        58 => 0.121,
+        59 => 0.123,
     ];
 
     protected static array $hoursConversion = [
@@ -40,7 +88,6 @@ class ReplayBalanceAction
         8 => 1.000,
     ];
 
-    // query all transaction fom user
     public static function UserBalance(Request $request, User $user): array
     {
         $date = $request->filled('month') && $request->filled('year')
@@ -69,8 +116,6 @@ class ReplayBalanceAction
             ->toArray();
     }
 
-
-    // query all transactions from users
     public static function UsersBalances(Carbon $date, Collection $users): array
     {
         $userIds = $users->pluck('id');
@@ -142,7 +187,6 @@ class ReplayBalanceAction
         })->toArray();
     }
 
-    // query all leaves
     protected static function filedLeaves(Collection $leavesCollection): array
     {
         return $leavesCollection->map(function ($leave) {
@@ -171,47 +215,47 @@ class ReplayBalanceAction
     }
 
     protected static function deductionEvents(Collection $currentUndertime): array
-{
-    $undertimeCount = $currentUndertime->where('event_tag', 'undertime')->count();
-    $tardinessCount = $currentUndertime->where('event_tag', 'tardiness')->count();
+    {
+        $undertimeCount = $currentUndertime->where('event_tag', 'undertime')->count();
+        $tardinessCount = $currentUndertime->where('event_tag', 'tardiness')->count();
 
-    $events = $currentUndertime->map(function ($event) {
+        $events = $currentUndertime->map(function ($event) {
 
-        $startsAt = Carbon::parse($event->starts_at);
-        $endsAt = Carbon::parse($event->ends_at);
+            $startsAt = Carbon::parse($event->starts_at);
+            $endsAt = Carbon::parse($event->ends_at);
 
-        $diffMinutes = $startsAt->diffInMinutes($endsAt);
+            $diffMinutes = $startsAt->diffInMinutes($endsAt);
 
-        $hours = intdiv($diffMinutes, 60);
-        $minutes = $diffMinutes % 60;
+            $hours = intdiv($diffMinutes, 60);
+            $minutes = $diffMinutes % 60;
 
-        $durationParts = [];
-        if ($hours > 0) {
-            $durationParts[] = $hours . ' ' . ($hours === 1 ? 'hr' : 'hrs');
-        }
-        if ($minutes > 0 || $hours === 0) {
-            $durationParts[] = $minutes . ' ' . ($minutes === 1 ? 'min' : 'mins');
-        }
-        $durationText = implode(' ', $durationParts);
+            $durationParts = [];
+            if ($hours > 0) {
+                $durationParts[] = $hours . ' ' . ($hours === 1 ? 'hr' : 'hrs');
+            }
+            if ($minutes > 0 || $hours === 0) {
+                $durationParts[] = $minutes . ' ' . ($minutes === 1 ? 'min' : 'mins');
+            }
+            $durationText = implode(' ', $durationParts);
 
-        $tag = Str::upper(Str::substr($event->event_tag, 0, 1));
+            $tag = Str::upper(Str::substr($event->event_tag, 0, 1));
+
+            return [
+                'label' => $startsAt->format('M j') . ', ' . $durationText . ' ' . $tag,
+                'minutes' => $minutes,
+                'hours' => $hours,
+                'day' => $startsAt->day,
+                'month_key' => $startsAt->format('Y-m'), // <-- needed to separate pay periods correctly
+                'deductionAmount' => $event->balance,
+            ];
+        })->values()->toArray();
 
         return [
-            'label' => $startsAt->format('M j') . ', ' . $durationText . ' ' . $tag,
-            'minutes' => $minutes,
-            'hours' => $hours,
-            'day' => $startsAt->day,
-            'month_key' => $startsAt->format('Y-m'), // <-- needed to separate pay periods correctly
-            'deductionAmount' => $event->balance,
+            'events' => $events,
+            'undertimeCount' => $undertimeCount,
+            'tardinessCount' => $tardinessCount,
         ];
-    })->values()->toArray();
-
-    return [
-        'events' => $events,
-        'undertimeCount' => $undertimeCount,
-        'tardinessCount' => $tardinessCount,
-    ];
-}
+    }
 
 
     protected static function minutesToDayEquivalent(int $totalMinutes): float
@@ -232,28 +276,28 @@ class ReplayBalanceAction
     }
 
     protected static function totalUndertime(Collection $current): float
-{
-    $currentEvents = self::deductionEvents(
-        $current->whereIn('event_tag', ['tardiness', 'undertime'])
-    );
+    {
+        $currentEvents = self::deductionEvents(
+            $current->whereIn('event_tag', ['tardiness', 'undertime'])
+        );
 
-    $periodBuckets = [];
+        $periodBuckets = [];
 
-    foreach ($currentEvents['events'] as $event) {
-        $totalEventMinutes = ($event['hours'] * 60) + $event['minutes'];
-        $period = $event['day'] <= 15 ? 1 : 2;
-        $bucketKey = $event['month_key'] . '-' . $period;
+        foreach ($currentEvents['events'] as $event) {
+            $totalEventMinutes = ($event['hours'] * 60) + $event['minutes'];
+            $period = $event['day'] <= 15 ? 1 : 2;
+            $bucketKey = $event['month_key'] . '-' . $period;
 
-        $periodBuckets[$bucketKey] = ($periodBuckets[$bucketKey] ?? 0) + $totalEventMinutes;
+            $periodBuckets[$bucketKey] = ($periodBuckets[$bucketKey] ?? 0) + $totalEventMinutes;
+        }
+
+        $total = 0.0;
+        foreach ($periodBuckets as $minutes) {
+            $total += self::minutesToDayEquivalent($minutes);
+        }
+
+        return $total;
     }
-
-    $total = 0.0;
-    foreach ($periodBuckets as $minutes) {
-        $total += self::minutesToDayEquivalent($minutes);
-    }
-
-    return $total;
-}
 
     protected static function replayBalances(
         Collection $current,
@@ -283,10 +327,9 @@ class ReplayBalanceAction
 
                 if ($type === 'vacation leave') {
                     $flAsVacationLeave = $current->where('leave_type', 'force leave')->where('event_tag', $type)->sum('balance');
+                    $absentAsVacationLeave = $current->where('leave_type', 'vacation leave')->where('event_tag', 'absent')->sum('balance');
 
                     $undertimeAsVacationLeave = self::totalUndertime($current);
-
-
                 }
 
                 return [
@@ -294,12 +337,19 @@ class ReplayBalanceAction
 
                     'previous' => $previous
                         ->where('leave_type', $type)
-                        ->sum('balance'), // sum all balances
+                        ->sum('balance'),
 
-                    'current' => $current
+                    'current' => in_array($type, [
+                        'wellness leave',
+                        'special privilege leave',
+                    ])
+                        ? 0
+                        : $current
                         ->where('leave_type', $type)
                         ->where('event_type', 'accrual')
-                        ->sum('balance') + $flAsVacationLeave + $undertimeAsVacationLeave + $absentAsVacationLeave,
+                        ->sum('balance')
+                        + $flAsVacationLeave
+                        + $undertimeAsVacationLeave + $absentAsVacationLeave,
 
                     'used' => abs(
                         $currentYear
@@ -319,15 +369,22 @@ class ReplayBalanceAction
         Carbon $date
     ): Collection {
 
+
         $totalForceLeaveDeduction = 0;
 
-        $current_balance = $current->where('leave_type', 'force leave')
-                                        ->where('event_type' , 'accrual')
-                                        ->where('event_tag', 'accrual')
-                                        ->sum('balance');
+        // NEW: force leave accrual scoped to a single year, not the whole collection
+        $forceLeaveAccrualForYear = fn(int $year) => $current
+            ->filter(fn($item) => Carbon::parse($item->starts_at)->year === $year)
+            ->where('leave_type', 'force leave')
+            ->where('event_type', 'accrual')
+            ->where('event_tag', 'accrual')
+            ->sum('balance');
 
+        $current_balance = $forceLeaveAccrualForYear($date->year); // CHANGED: was summing all years
 
         for ($year = 2023; $year < $date->year; $year++) {
+
+            $yearAccrual = $forceLeaveAccrualForYear($year); // NEW: this year's own accrual
 
             $used = abs(
                 $current
@@ -338,7 +395,7 @@ class ReplayBalanceAction
                     ->sum('balance')
             );
 
-            $unused = max(0, $current_balance - $used);
+            $unused = max(0, $yearAccrual - $used); // CHANGED: was $current_balance - $used
 
             $totalForceLeaveDeduction += $unused;
         }
@@ -357,8 +414,7 @@ class ReplayBalanceAction
 
                 case 'vacation leave':
 
-                    $balance['monthly_accrual'] = 1.25; // monthly accrual
-
+                    $balance['monthly_accrual'] = 1.25;
                     $balance['estimated'] = $balance['current'] + 1.25;
 
                     if ($date->month === 12) {
@@ -373,30 +429,40 @@ class ReplayBalanceAction
                         );
 
                         $unused = max(0, $current_balance - $forceLeaveUsed);
-
                         $balance['estimated'] -= $unused;
                     }
 
                     break;
 
+                case 'wellness leave':
+                case 'special privilege leave':
+
+                    $annualEntitlement = 3;
+
+                    $used = abs(
+                        $current
+                            ->filter(fn($item) => Carbon::parse($item->starts_at)->year === $date->year)
+                            ->where('leave_type', $balance['leave_type'])
+                            ->where('event_type', 'deduction')
+                            ->whereIn('event_tag', ['leave', 'vacation leave'])
+                            ->sum('balance')
+                    );
+
+                    $balance['previous'] = max(0, $annualEntitlement - $used);
+                    $balance['current'] = max(0, $annualEntitlement - $used);
+
+                    $balance['monthly_accrual'] = 0;
+
+                    // Resets every year
+                    $balance['estimated'] = $balance['current'];
+
+                    break;
+
+
                 case 'sick leave':
 
                     $balance['monthly_accrual'] = 1.25;
                     $balance['estimated'] += 1.25;
-
-                    break;
-
-                case 'wellness leave':
-
-                    $balance['monthly accrual'] = $date->month === 12 ? 3 : 0;
-                    $balance['estimated'] = $date->month === 12 ? 3 : $balance['current'];
-
-                    break;
-
-                case 'special privilege leave':
-
-                    $balance['monthly accrual'] = $date->month === 12 ? 3 : 0;
-                    $balance['estimated'] = $date->month === 12 ? 3 : $balance['current'];
 
                     break;
 

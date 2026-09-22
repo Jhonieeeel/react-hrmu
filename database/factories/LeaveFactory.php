@@ -14,8 +14,8 @@ class LeaveFactory extends Factory
     public static function balances(): array
     {
         return [
-            ['vacation leave' => 5.584, 'sick leave' => 10.792, 'force leave' => 5.000],
-            ['vacation leave' => 6.188, 'sick leave' => 11.583, 'force leave' => 5.000],
+            ['vacation leave' => 5.584, 'sick leave' => 10.792, 'force leave' => 5.000, 'special privilege leave' => 3, 'wellness leave' => 3],
+            ['vacation leave' => 6.188, 'sick leave' => 11.583, 'force leave' => 5.000, 'special privilege leave' => 3, 'wellness leave' => 3],
             // ['vacation leave' => 14.313, 'sick leave' => 22.833, 'force leave' => 5.000],
             // ['vacation leave' => 61.890, 'sick leave' => 154.583, 'force leave' => 5.000],
             // ['vacation leave' => 6.368, 'sick leave' => 11.583, 'force leave' => 5.000],
@@ -57,28 +57,67 @@ class LeaveFactory extends Factory
 
     /**
      * An accrual entry for a specific leave type and balance.
+     * Pass $startsAt/$endsAt to accrue a later month; defaults to Jan 2023
+     * (the initial balance seeded per employee).
      */
-    public function accrual(string $leaveType, float $balance): static
+    public function accrual(string $leaveType, float $balance, ?string $startsAt = null, ?string $endsAt = null): static
     {
-        return $this->state(fn () => [
+        return $this->state(fn() => [
             'leave_type' => $leaveType,
             'event_type' => 'accrual',
             'event_tag' => 'accrual',
             'balance' => $balance,
+            'starts_at' => $startsAt ?? '2023-01-01',
+            'ends_at' => $endsAt ?? '2023-01-31',
         ]);
     }
 
     /**
-     * The monthly filing placeholder entry.
+     * A deduction entry — tardiness, undertime, filed leave usage, or a
+     * force-leave-to-vacation-leave conversion (leave_type: 'force leave',
+     * event_tag: 'vacation leave'). $balance is given positive; it is
+     * stored negative to match how ReplayBalanceAction expects it.
+     */
+    public function deduction(string $leaveType, string $eventTag, float $balance, string $startsAt, ?string $endsAt = null): static
+    {
+        return $this->state(fn() => [
+            'leave_type' => $leaveType,
+            'event_type' => 'deduction',
+            'event_tag' => $eventTag,
+            'balance' => -abs($balance),
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt ?? $startsAt,
+        ]);
+    }
+
+    /**
+     * The monthly filing placeholder entry (Jan 2023 default, uncompleted).
      */
     public function monthlyFilingPlaceholder(): static
     {
-        return $this->state(fn () => [
+        return $this->state(fn() => [
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
             'event_tag' => 'filing',
             'balance' => 0,
             'status' => false,
+        ]);
+    }
+
+    /**
+     * A dated monthly filing entry, optionally marked completed with remarks.
+     */
+    public function monthlyFiling(string $startsAt, string $endsAt, ?string $remarks = null, bool $completed = true): static
+    {
+        return $this->state(fn() => [
+            'leave_type' => 'monthly filing',
+            'event_type' => 'filing',
+            'event_tag' => 'filing',
+            'balance' => 0,
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'status' => $completed,
+            'remarks' => $remarks,
         ]);
     }
 }

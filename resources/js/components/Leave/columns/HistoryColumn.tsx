@@ -18,6 +18,7 @@ import {
     Baby,
     BadgeCheck,
     BriefcaseMedical,
+    CircleX,
     Clock3,
     ClockArrowDown,
     CloudRain,
@@ -55,6 +56,7 @@ const badgeType: Record<string, LucideIcon> = {
     'adoption leave': HeartHandshake,
     cto: Clock3,
     offset: ArrowLeftRight,
+    absent: CircleX,
 
     // Non-leave events
     undertime: ClockArrowDown,

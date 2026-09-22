@@ -22,7 +22,8 @@ class MonthlyAccrualAction
         }
     }
 
-    public function addInitialAccrual(InitialAccrualDTO $data) {
+    public function addInitialAccrual(InitialAccrualDTO $data)
+    {
 
         Leave::create([
             'user_id' => $data->user_id,
@@ -44,7 +45,7 @@ class MonthlyAccrualAction
             'ends_at' => $data->ends_at
         ]);
 
-         Leave::create([
+        Leave::create([
             'user_id' => $data->user_id,
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
@@ -54,8 +55,6 @@ class MonthlyAccrualAction
             'ends_at' => $data->ends_at,
             'status' => false
         ]);
-
-
     }
     public function vacationLeaveAccrual(LeaveDTO $data)
     {
@@ -88,7 +87,7 @@ class MonthlyAccrualAction
         Leave::create([
             'user_id' => $data->user_id,
             'leave_type' => 'force leave',
-            'event_type' => $data->event_type,
+            'event_type' => 'accrual',
             'event_tag' => 'accrual',
             'balance' => 5,
             'starts_at' => $data->starts_at,
@@ -110,7 +109,8 @@ class MonthlyAccrualAction
         ]);
     }
 
-    public function wellnessLeaveAccrual(LeaveDTO $data) {
+    public function wellnessLeaveAccrual(LeaveDTO $data)
+    {
         Leave::create([
             'user_id' => $data->user_id,
             'leave_type' => 'wellness leave',
@@ -122,7 +122,8 @@ class MonthlyAccrualAction
         ]);
     }
 
-    public function specialAccrual(LeaveDTO $data) {
+    public function specialAccrual(LeaveDTO $data)
+    {
         Leave::create([
             'user_id' => $data->user_id,
             'leave_type' => 'special privilege leave',
