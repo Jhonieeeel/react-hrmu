@@ -33,7 +33,7 @@ class CreateLeaveAction extends Data
                     ->diffInDays(Carbon::parse($range['ends_at'])) + 1;
 
                 Leave::create([
-                    'user_id' => $data->user_id,
+                    'employee_id' => $data->employee_id,
                     'leave_type' => $data->leave_type,
                     'event_type' => $data->event_type,
                     'event_tag' => $data->event_tag,

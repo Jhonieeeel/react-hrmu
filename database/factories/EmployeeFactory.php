@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Employee;
+use App\Models\Section;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -12,16 +13,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class EmployeeFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
             'user_id' => User::factory(),
-            'unit_id' => Unit::factory(),
+            'position' => 'Programmer',
+            'unit_id' => Unit::factory()->for(Section::factory(), 'section'),
         ];
     }
 }

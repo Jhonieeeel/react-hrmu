@@ -8,11 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Leave extends Model
 {
-
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'employee_id',
         'leave_type',
         'event_type',
         'event_tag',
@@ -20,17 +19,18 @@ class Leave extends Model
         'starts_at',
         'ends_at',
         'status',
-        'remarks'
+        'remarks',
     ];
 
     protected $casts = [
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
-        'balance' => 'decimal:3'
+        'balance' => 'decimal:3',
+        'status' => 'boolean',
     ];
 
-    public function user(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Employee::class);
     }
 }

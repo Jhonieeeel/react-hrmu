@@ -41,9 +41,9 @@ export default function PassSlips({ users }: PageProp) {
     return (
         <>
             <Head title="PassSlips" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto px-4 py-6 md:px-8 md:py-8">
                 <form onSubmit={handleSubmit}>
-                    <FieldSet className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
+                    <FieldSet className="w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
                         {/* ====================================================== */}
                         {/* Personnel Information */}
                         {/* ====================================================== */}

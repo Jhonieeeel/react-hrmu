@@ -3,42 +3,77 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Leave\AddMonthlyForm;
-use App\Actions\Leave\AddUserBalanceAction;
+use App\Actions\Leave\AddEmployeeBalanceAction;
 use App\Actions\User\CreateUserAction;
+use App\Actions\User\UpdateEmployeeDetailsAction;
 use App\Actions\User\UsersListAction;
 use App\Data\LeaveDTO;
 use App\Data\UserDTO;
+use App\Models\Division;
+use App\Models\Employee;
+use App\Models\Section;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
 
-   public function update(UserDTO $userDTO)
-    {
-        $user = User::findOrFail($userDTO->id);
-
-        $user->update([
-            'name' => $userDTO->name,
-            'email' => $userDTO->email,
-            'employee_type' => $userDTO->employee_type,
+    public function update(
+        Request $request,
+        User $user,
+        UpdateEmployeeDetailsAction $action
+    ) {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'employee_type' => ['required', Rule::in(['new employee', 'old', 'transferee'])],
+            'position' => ['required', 'string', 'max:255'],
+            'division_id' => ['nullable', 'integer', 'exists:divisions,id'],
+            'section_id' => ['nullable', 'integer', 'exists:sections,id'],
+            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
         ]);
 
-        return to_route('users.index')
+        $action->execute($user, $data);
+
+        return to_route('users_info.show', $user)
             ->with('success', [
-            'message' => 'User Updated Successfully',
-            'id' => Str::uuid()
-        ]);
+                'message' => 'Employee details updated successfully.',
+                'id' => Str::uuid(),
+            ]);
     }
 
     public function show(User $user): Response
     {
+        $employee = $user->employees()
+            ->with(['section:id,section_name,section_code', 'unit:id,unit_name,unit_code'])
+            ->first();
+
         return Inertia::render('User/UserInfo', [
             'user' => $user->only(['id', 'name', 'email', 'employee_type']),
+            'employee' => $employee?->only([
+                'id',
+                'user_id',
+                'position',
+                'division_id',
+                'section_id',
+                'unit_id',
+            ]) ?? [
+                'id' => null,
+                'user_id' => $user->id,
+                'position' => '',
+                'division_id' => null,
+                'section_id' => null,
+                'unit_id' => null,
+            ],
+            'divisions' => Division::query()->orderBy('division_name')->get(['id', 'division_name', 'division_code']),
+            'sections' => Section::query()->with('division:id,division_name,division_code')->orderBy('section_name')->get(['id', 'division_id', 'section_name', 'section_code']),
+            'units' => Unit::query()->orderBy('unit_name')->get(['id', 'section_id', 'unit_name', 'unit_code']),
         ]);
     }
 
@@ -51,7 +86,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function balance(LeaveDTO $dto, AddUserBalanceAction $action) {
+    public function balance(LeaveDTO $dto, AddEmployeeBalanceAction $action) {
 
         $action($dto);
 
@@ -80,12 +115,25 @@ class UserController extends Controller
     }
 
     // data
-    public function data(UsersListAction $action) {
-        return response()->json($action());
+    public function data(Request $request, UsersListAction $action)
+    {
+        return response()->json($action($request));
     }
 
-    public function index(): Response {
-        // employee_type = 1, yes "New Employee, 0 if existing employee
-        return Inertia::render("User/index", ['users_data' => User::query()->where('employee_type', 'transferee')->select(['id', 'name'])->get()]);
+    public function index(): Response
+    {
+        return Inertia::render('User/index', [
+            'users_data' => Employee::query()
+                ->with('user:id,name')
+                ->whereHas('user', fn ($query) => $query->where('employee_type', 'transferee'))
+                ->get(['id', 'user_id'])
+                ->map(fn (Employee $employee) => [
+                    'id' => $employee->id,
+                    'name' => $employee->user?->name,
+                ]),
+            'divisions' => Division::query()->orderBy('division_name')->get(['id', 'division_name', 'division_code']),
+            'sections' => Section::query()->with('division:id,division_name,division_code')->orderBy('section_name')->get(['id', 'division_id', 'section_name', 'section_code']),
+            'units' => Unit::query()->with('section:id,section_name,section_code')->orderBy('unit_name')->get(['id', 'section_id', 'unit_name', 'unit_code']),
+        ]);
     }
 }

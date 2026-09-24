@@ -46,7 +46,7 @@ function formatDate(dateStr: string) {
 
 export default function EditEventDialog({ calendarEvent, setMode }: Props) {
     const form = useForm({
-        user_id: calendarEvent?.user_id,
+        employee_id: calendarEvent?.employee_id,
         id: calendarEvent?.id,
         leave_type: '',
         event_type: 'deduction',

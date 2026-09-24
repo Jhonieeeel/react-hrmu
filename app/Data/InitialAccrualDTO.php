@@ -8,7 +8,7 @@ use Spatie\LaravelData\Data;
 class InitialAccrualDTO extends Data
 {
     public function __construct(
-        public ?int $user_id,
+        public ?int $employee_id,
         public string $vacation_leave,
         public string $sick_leave,
         public float $vl_balance,

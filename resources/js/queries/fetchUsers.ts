@@ -1,18 +1,24 @@
-import leaves from '@/routes/leaves';
-import users from '@/routes/users';
-import { queryOptions, useQueryClient } from '@tanstack/react-query';
+import { queryOptions } from '@tanstack/react-query';
 import axios from 'axios';
+import users from '@/routes/users';
 
-export default function getUsers(page: number) {
+type EmployeeFilters = {
+    section_id?: string;
+    unit_id?: string;
+    position?: string;
+};
+
+export default function getUsers(page: number, filters: EmployeeFilters = {}) {
     return queryOptions({
-        queryKey: ['users', page],
-        queryFn: () => getUsersList(page),
+        queryKey: ['employees', page, filters],
+        queryFn: () => getEmployeesList(page, filters),
     });
 }
 
-async function getUsersList(page: number) {
+async function getEmployeesList(page: number, filters: EmployeeFilters) {
     const res = await axios.get(users.data().url, {
-        params: { page },
+        params: { page, ...filters },
     });
+
     return res.data;
 }

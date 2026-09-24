@@ -10,12 +10,12 @@ import { CalendarPlus2Icon } from 'lucide-react';
 
 type AccrualButtonProps = {
     filters: Filters;
-    user_id: number;
+    employee_id: number;
 };
 
 export default function AccrualButton({
     filters, // month, year
-    user_id,
+    employee_id,
 }: AccrualButtonProps) {
     const base = new Date(Number(filters.year), Number(filters.month) - 1, 1);
 
@@ -27,7 +27,7 @@ export default function AccrualButton({
     const query = useQueryClient();
 
     const form = useForm({
-        user_id: user_id,
+        employee_id: employee_id,
         leave_type: 'any leave',
         event_type: 'accrual',
         event_tag: 'accrual',
@@ -40,7 +40,7 @@ export default function AccrualButton({
     function handleAccrual(e: React.MouseEvent) {
         e.preventDefault();
 
-        form.submit(leaves.accrual(form.data.user_id), {
+        form.submit(leaves.accrual(form.data.employee_id), {
             onSuccess: () => {
                 query.invalidateQueries({
                     queryKey: ['leaves'],

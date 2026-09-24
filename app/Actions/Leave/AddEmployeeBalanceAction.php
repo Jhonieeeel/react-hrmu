@@ -6,7 +6,7 @@ use App\Data\LeaveDTO;
 use App\Models\Leave;
 use Carbon\Carbon;
 
-class AddUserBalanceAction
+class AddEmployeeBalanceAction
 {
     public function __invoke(LeaveDTO $dto): Leave
     {
@@ -14,7 +14,7 @@ class AddUserBalanceAction
         $endsAt = Carbon::parse($dto->ends_at);     // 2023-01-31
 
         return Leave::create([
-            'user_id' => $dto->user_id,
+            'employee_id' => $dto->employee_id,
             'leave_type' => $dto->leave_type,
             'event_type' => $dto->event_type,
             'event_tag' => $dto->event_tag,

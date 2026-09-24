@@ -57,7 +57,7 @@ export default function Leaves({ flash }: PageProp) {
     return (
         <>
             <Head title="Leaves" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto px-4 py-6 md:px-8 md:py-8">
                 <div className="flex items-center justify-between space-y-3">
                     <div className="space-y-1.5">
                         <h4 className="text-md flex items-center gap-1 font-bold">

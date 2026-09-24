@@ -14,7 +14,6 @@ import { toDateOnly } from '@/lib/utils';
 import leaves from '@/routes/leaves';
 import { Leave } from '@/types';
 import { useForm } from '@inertiajs/react';
-import { format, isValid, parseISO } from 'date-fns';
 
 type PageProps = {
     leave: Leave;
@@ -22,7 +21,7 @@ type PageProps = {
 
 export default function EditLeaveForm({ leave }: PageProps) {
     const form = useForm({
-        user_id: leave?.user_id,
+        employee_id: leave?.employee_id,
         id: leave?.id,
         leave_type: leave?.leave_type,
         event_type: leave?.event_type,
@@ -46,7 +45,7 @@ export default function EditLeaveForm({ leave }: PageProps) {
 
     function handleClear() {
         form.setData({
-            user_id: leave?.user_id,
+            employee_id: leave?.employee_id,
             id: leave?.id,
             leave_type: leave?.leave_type,
             event_type: leave?.event_type,
@@ -61,7 +60,7 @@ export default function EditLeaveForm({ leave }: PageProps) {
     }
 
     return (
-        <div className="space-y-6 p-14">
+        <div className="space-y-6 px-4 py-6 md:px-8 md:py-8">
             <div>
                 <h1 className="text-4xl font-semibold dark:text-accent">
                     Edit Leave Form

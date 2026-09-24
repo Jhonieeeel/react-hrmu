@@ -16,7 +16,6 @@ import { event_types } from '../Leave/constants/constants';
 import DatePicker from '../Leave/DatePicker';
 import SelectCombobox from '../Leave/SelectCombobox';
 import leaves from '@/routes/leaves';
-import { queryClient } from '@/queries/fetchUserBalance';
 import { useQueryClient } from '@tanstack/react-query';
 
 type DialogFormProps = {
@@ -33,7 +32,7 @@ export default function LeaveFormDialog({
     users,
 }: DialogFormProps) {
     const form = useForm({
-        user_id: 0,
+        employee_id: 0,
         leave_type: '',
         event_type: 'deduction',
         event_tag: 'leave',
@@ -94,9 +93,9 @@ export default function LeaveFormDialog({
                                     value: u.id,
                                     label: u.name,
                                 }))}
-                                value={form.data.user_id}
-                                onValueChange={(value: Leave['user_id']) =>
-                                    form.setData('user_id', Number(value))
+                                value={form.data.employee_id}
+                                onValueChange={(value: string) =>
+                                    form.setData('employee_id', Number(value))
                                 }
                                 placeholder="Select an employee"
                             />

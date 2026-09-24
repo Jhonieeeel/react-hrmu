@@ -8,28 +8,32 @@ use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class OcdEmployeeSeeder extends Seeder
 {
     public function run(): void
     {
-        $defaultUnit = Unit::first();
+        $defaultUnit = Unit::query()->firstOrFail();
 
         foreach (UserFactory::ocdEmployees() as $data) {
-            $user = User::create([
-                'name' => $data['name'],
-                'username' => Str::slug($data['name'], ''),
-                'email' => $data['email'],
-                'email_verified_at' => now(),
-                'password' => Hash::make('password'),
-            ]);
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'email_verified_at' => now(),
+                    'employee_type' => $data['employee_type'],
+                    'password' => Hash::make('password'),
+                ],
+            );
 
-            Employee::create([
-                'user_id' => $user->id,
-                'unit_id' => $defaultUnit?->id,
-                'employee_type' => $data['employee_type'],
-            ]);
+            Employee::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'position' => 'Employee',
+                    'section_id' => $defaultUnit->section_id,
+                    'unit_id' => $defaultUnit->id,
+                ],
+            );
         }
     }
 }

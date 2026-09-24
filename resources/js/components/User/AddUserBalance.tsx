@@ -1,5 +1,5 @@
 import users_balance from '@/routes/users_balance';
-import { User } from '@/types';
+import type { EmployeeSummary } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { add_balance_types } from '../Leave/constants/constants';
 import DatePicker from '../Leave/DatePicker';
@@ -15,12 +15,12 @@ import {
 import { Input } from '../ui/input';
 
 type PageProp = {
-    users_data: User[];
+    users_data: EmployeeSummary[];
 };
 
-export default function AddUserBalance({ users_data }: PageProp) {
+export default function AddEmployeeBalance({ users_data }: PageProp) {
     const form = useForm({
-        user_id: 0,
+        employee_id: 0,
         leave_type: '',
         event_type: 'accrual',
         event_tag: 'accrual',
@@ -59,14 +59,14 @@ export default function AddUserBalance({ users_data }: PageProp) {
                                     label: u.name,
                                 })) ?? []
                             }
-                            value={form.data.user_id}
-                            onValueChange={(value: User['id']) =>
-                                form.setData('user_id', Number(value))
+                            value={form.data.employee_id}
+                            onValueChange={(value: string) =>
+                                form.setData('employee_id', Number(value))
                             }
                             placeholder="Select an employee"
                         />
 
-                        <FieldError>{form.errors.user_id}</FieldError>
+                        <FieldError>{form.errors.employee_id}</FieldError>
                     </Field>
 
                     {/* Leave Type */}

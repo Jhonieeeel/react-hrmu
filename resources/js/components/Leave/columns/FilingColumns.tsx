@@ -29,10 +29,10 @@ export function FilingColumns({
 }: FilingColumnsProps): ColumnDef<Leave>[] {
     return [
         {
-            accessorKey: 'user.name',
+            accessorKey: 'employee.user.name',
             header: () => <div className="text-left">Employee Name</div>,
             cell: ({ row }) => {
-                const name = row.original.user?.name;
+                const name = row.original.employee?.user?.name;
                 return <div className="text-left font-medium">{name}</div>;
             },
         },
@@ -55,7 +55,7 @@ export function FilingColumns({
         {
             id: 'actions',
             cell: ({ row }) => {
-                const user = row.original.user;
+                const employee = row.original.employee;
                 const leave = row.original;
 
                 return (
@@ -78,7 +78,7 @@ export function FilingColumns({
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                                 <Link
-                                    href={leaves.show(user?.id, {
+                                    href={leaves.show(employee?.id ?? 0, {
                                         query: { month, year },
                                     })}
                                 >

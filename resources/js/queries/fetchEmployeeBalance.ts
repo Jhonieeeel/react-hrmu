@@ -2,27 +2,27 @@ import leaves from '@/routes/leaves';
 import { queryOptions, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
-export default function getUserBalanceOption(
+export default function getEmployeeBalanceOption(
     month: string,
     year: string,
-    user_id: number,
+    employee_id: number,
     page: number,
 ) {
     return queryOptions({
-        queryKey: ['leaves', month, year, user_id, page],
-        queryFn: () => getUserBalance(month, year, user_id, page),
+        queryKey: ['leaves', month, year, employee_id, page],
+        queryFn: () => getEmployeeBalance(month, year, employee_id, page),
         placeholderData: (previous) => previous,
         staleTime: 1000 * 60 * 1,
     });
 }
 
-async function getUserBalance(
+async function getEmployeeBalance(
     month: string,
     year: string,
-    user_id: number,
+    employee_id: number,
     page: number,
 ) {
-    const res = await axios.get(leaves.balance(user_id).url, {
+    const res = await axios.get(leaves.balance(employee_id).url, {
         params: { month, year, page },
     });
     return res.data;

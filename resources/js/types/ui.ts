@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BreadcrumbItem } from '@/types/navigation';
-import { User } from './auth';
+import type { User } from './auth';
 
 export type AppLayoutProps = {
     children: ReactNode;
@@ -23,7 +23,7 @@ export type AuthLayoutProps = {
 
 export type Leave = {
     id: number;
-    user_id: number;
+    employee_id: number;
     leave_type: string;
     event_type: string;
     event_tag: string;
@@ -33,7 +33,45 @@ export type Leave = {
     status: boolean;
     remarks?: string;
 
+    employee?: {
+        id: number;
+        user: {
+            id: number;
+            name: string;
+            employee_type?: string;
+        };
+    };
     user?: User;
+};
+
+export type EmployeeSummary = {
+    id: number;
+    name: string;
+    employee_type?: string;
+};
+
+export type EmployeeRecord = {
+    id: number;
+    employee_id: number;
+    user_id: number;
+    name: string;
+    employee_type?: string;
+    position: string | null;
+    division: {
+        id: number;
+        division_name: string;
+        division_code: string;
+    } | null;
+    section: {
+        id: number;
+        section_name: string;
+        section_code: string;
+    } | null;
+    unit: {
+        id: number;
+        unit_name: string;
+        unit_code: string;
+    } | null;
 };
 
 export type DataResponse<T> = {
@@ -51,7 +89,7 @@ export type EventProp = {
     title: string;
     end: Temporal.PlainDate;
     start: Temporal.PlainDate;
-    user_id: number;
+    employee_id: number;
     user: User;
     status: boolean;
     calendarTitle: string;
@@ -64,7 +102,7 @@ export type CalendarEvent = {
     start: string;
     end: string;
     user: User;
-    user_id: number;
+    employee_id: number;
     status: boolean;
     calendarTitle: string;
     calendarTheme: {

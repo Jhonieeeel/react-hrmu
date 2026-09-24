@@ -26,7 +26,7 @@ class MonthlyAccrualAction
     {
 
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'vacation leave',
             'event_type' => 'accrual',
             'event_tag' => 'accrual',
@@ -36,7 +36,7 @@ class MonthlyAccrualAction
         ]);
 
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'sick leave',
             'event_type' => 'accrual',
             'event_tag' => 'accrual',
@@ -46,7 +46,7 @@ class MonthlyAccrualAction
         ]);
 
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
             'event_tag' => 'filing',
@@ -59,7 +59,7 @@ class MonthlyAccrualAction
     public function vacationLeaveAccrual(LeaveDTO $data)
     {
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'vacation leave',
             'event_type' => $data->event_type,
             'event_tag' => 'accrual',
@@ -72,7 +72,7 @@ class MonthlyAccrualAction
     public function sickLeaveAccrual(LeaveDTO $data)
     {
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'sick leave',
             'event_type' => $data->event_type,
             'event_tag' => 'accrual',
@@ -85,7 +85,7 @@ class MonthlyAccrualAction
     public function forceLeaveAccrual(LeaveDTO $data)
     {
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'force leave',
             'event_type' => 'accrual',
             'event_tag' => 'accrual',
@@ -98,7 +98,7 @@ class MonthlyAccrualAction
     public function monthlyFilingAccrual(LeaveDTO $data)
     {
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
             'event_tag' => 'filing',
@@ -112,7 +112,7 @@ class MonthlyAccrualAction
     public function wellnessLeaveAccrual(LeaveDTO $data)
     {
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'wellness leave',
             'event_type' => $data->event_type,
             'event_tag' => 'accrual',
@@ -125,7 +125,7 @@ class MonthlyAccrualAction
     public function specialAccrual(LeaveDTO $data)
     {
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'special privilege leave',
             'event_type' => $data->event_type,
             'event_tag' => 'accrual',

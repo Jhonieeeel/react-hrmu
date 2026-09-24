@@ -12,16 +12,16 @@ import { useForm } from '@inertiajs/react';
 import { Input } from '../ui/input';
 import DatePicker from '../Leave/DatePicker';
 import { Button } from '../ui/button';
-import { User } from '@/types';
+import type { EmployeeSummary } from '@/types';
 import users_filing from '@/routes/users_filing';
 
 type PageProp = {
-    users_data: User[];
+    users_data: EmployeeSummary[];
 };
 
 export default function UserMonthlyFilingForm({ users_data }: PageProp) {
     const form = useForm({
-        user_id: 0,
+        employee_id: 0,
         leave_type: 'monthly filing',
         event_type: 'filing',
         event_tag: 'filing',
@@ -58,13 +58,13 @@ export default function UserMonthlyFilingForm({ users_data }: PageProp) {
                                 value: u.id,
                                 label: u.name,
                             }))}
-                            value={form.data.user_id}
-                            onValueChange={(value: User['id']) =>
-                                form.setData('user_id', Number(value))
+                            value={form.data.employee_id}
+                            onValueChange={(value: string) =>
+                                form.setData('employee_id', Number(value))
                             }
                             placeholder="Select an employee"
                         />
-                        <FieldError>{form.errors.user_id}</FieldError>
+                        <FieldError>{form.errors.employee_id}</FieldError>
                     </Field>
 
                     <div className="flex items-center gap-4">

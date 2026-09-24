@@ -8,6 +8,28 @@ use Carbon\Carbon;
 
 class CalendarTransactionsAction
 {
+    public function upcomingLeaves()
+    {
+        return Leave::query()
+            ->with('employee.user:id,name')
+            ->where('event_type', 'deduction')
+            ->whereIn('event_tag', ['leave', 'vacation leave', 'cto', 'offset'])
+            ->whereDate('starts_at', '>=', now()->toDateString())
+            ->orderBy('starts_at')
+            ->limit(6)
+            ->get(['id', 'employee_id', 'leave_type', 'starts_at', 'ends_at', 'status'])
+            ->map(fn (Leave $leave) => [
+                'id' => $leave->id,
+                'employee_id' => $leave->employee_id,
+                'employee_name' => $leave->employee?->user?->name ?? 'Unknown employee',
+                'leave_type' => $leave->leave_type,
+                'starts_at' => Carbon::parse($leave->starts_at)->toDateString(),
+                'ends_at' => Carbon::parse($leave->ends_at)->toDateString(),
+                'status' => $leave->status,
+            ])
+            ->values();
+    }
+
     public function __invoke()
     {
         $year = now()->year;
@@ -26,12 +48,12 @@ class CalendarTransactionsAction
         });
 
         $leaves = Leave::query()
-            ->with('user:id,name')
+            ->with('employee.user:id,name')
             ->where('event_type', 'deduction')
             ->whereIn('event_tag', ['leave', 'vacation leave', 'cto', 'offset'])
             ->select([
                 'id',
-                'user_id',
+                'employee_id',
                 'leave_type',
                 'starts_at',
                 'ends_at',
@@ -40,11 +62,11 @@ class CalendarTransactionsAction
             ->map(function ($leave) {
                 return [
                     'id' => (string) $leave->id,
-                    'user_id' => $leave->user_id,
-                    'title' => $leave->user->name,
+                    'employee_id' => $leave->employee_id,
+                    'title' => $leave->employee?->user?->name ?? 'Unknown employee',
                     'start' => Carbon::parse($leave->starts_at)->format('Y-m-d'),
                     'end' => Carbon::parse($leave->ends_at)->format('Y-m-d'),
-                    'user' => $leave->user,
+                    'user' => $leave->employee?->user,
                     'calendarTitle' => $leave->leave_type,
                     'calendarId' => $leave->leave_type,
                 ];

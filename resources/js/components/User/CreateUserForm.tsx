@@ -1,4 +1,8 @@
 import { useForm } from '@inertiajs/react';
+import { endOfMonth, format } from 'date-fns';
+import { ArrowRightLeft, UserPlus } from 'lucide-react';
+import users from '@/routes/users';
+import DatePicker from '../Leave/DatePicker';
 import { Button } from '../ui/button';
 import {
     Field,
@@ -8,13 +12,28 @@ import {
     FieldSet,
 } from '../ui/field';
 import { Input } from '../ui/input';
-import users from '@/routes/users';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { ArrowRightLeft, Check, User2, UserPlus, X } from 'lucide-react';
-import DatePicker from '../Leave/DatePicker';
-import { endOfMonth, format } from 'date-fns';
 
-export default function CreateUserForm() {
+type CreateUserFormProps = {
+    sections: Array<{ id: number; section_name: string; section_code: string }>;
+    divisions: Array<{
+        id: number;
+        division_name: string;
+        division_code: string;
+    }>;
+    units: Array<{
+        id: number;
+        section_id: number;
+        unit_name: string;
+        unit_code: string;
+    }>;
+};
+
+export default function CreateUserForm({
+    divisions,
+    sections,
+    units,
+}: CreateUserFormProps) {
     const form = useForm({
         name: '',
         email: '',
@@ -23,6 +42,10 @@ export default function CreateUserForm() {
         ends_at: '',
         password: '',
         password_confirmation: '',
+        position: '',
+        division_id: '',
+        section_id: '',
+        unit_id: '',
     });
 
     function handleSubmit(e: React.SubmitEvent) {
@@ -48,7 +71,7 @@ export default function CreateUserForm() {
 
     return (
         <form onSubmit={handleSubmit}>
-            <FieldSet className="mx-auto w-full max-w-xl border-0 shadow-md md:p-8">
+            <FieldSet className="w-full max-w-3xl border-0 shadow-md md:p-8">
                 <h1 className="text-2xl font-semibold">User Creation</h1>
 
                 <FieldGroup className="gap-5">
@@ -68,6 +91,91 @@ export default function CreateUserForm() {
                         />
 
                         <FieldError>{form.errors.name}</FieldError>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="division_id">Division</FieldLabel>
+                        <select
+                            id="division_id"
+                            value={form.data.division_id}
+                            onChange={(e) => {
+                                form.setData('division_id', e.target.value);
+                                form.setData('section_id', '');
+                                form.setData('unit_id', '');
+                            }}
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/50"
+                        >
+                            <option value="">Select a division</option>
+                            {divisions.map((division) => (
+                                <option key={division.id} value={division.id}>
+                                    {division.division_code} —{' '}
+                                    {division.division_name}
+                                </option>
+                            ))}
+                        </select>
+                        <FieldError>{form.errors.division_id}</FieldError>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="position">Position</FieldLabel>
+                        <Input
+                            id="position"
+                            value={form.data.position}
+                            onChange={(e) =>
+                                form.setData('position', e.target.value)
+                            }
+                            placeholder="e.g. Programmer"
+                        />
+                        <FieldError>{form.errors.position}</FieldError>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="section_id">Section</FieldLabel>
+                        <select
+                            id="section_id"
+                            value={form.data.section_id}
+                            onChange={(e) => {
+                                form.setData('section_id', e.target.value);
+                                form.setData('unit_id', '');
+                            }}
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/50"
+                        >
+                            <option value="">Select a section</option>
+                            {sections.map((section) => (
+                                <option key={section.id} value={section.id}>
+                                    {section.section_code} —{' '}
+                                    {section.section_name}
+                                </option>
+                            ))}
+                        </select>
+                        <FieldError>{form.errors.section_id}</FieldError>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="unit_id">Unit</FieldLabel>
+                        <select
+                            id="unit_id"
+                            value={form.data.unit_id}
+                            onChange={(e) =>
+                                form.setData('unit_id', e.target.value)
+                            }
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/50"
+                        >
+                            <option value="">Select a unit</option>
+                            {units
+                                .filter(
+                                    (unit) =>
+                                        !form.data.section_id ||
+                                        unit.section_id ===
+                                            Number(form.data.section_id),
+                                )
+                                .map((unit) => (
+                                    <option key={unit.id} value={unit.id}>
+                                        {unit.unit_code} — {unit.unit_name}
+                                    </option>
+                                ))}
+                        </select>
+                        <FieldError>{form.errors.unit_id}</FieldError>
                     </Field>
 
                     {/* Email */}
@@ -98,7 +206,9 @@ export default function CreateUserForm() {
                             type="single"
                             value={form.data.employee_type}
                             onValueChange={(value) => {
-                                if (!value) return;
+                                if (!value) {
+                                    return;
+                                }
 
                                 form.setData('employee_type', value);
                             }}

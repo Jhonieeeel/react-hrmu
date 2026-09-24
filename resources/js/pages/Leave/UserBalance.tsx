@@ -1,12 +1,29 @@
+import { Head } from '@inertiajs/react';
+import { useQuery } from '@tanstack/react-query';
+import {
+    Calendar,
+    ChevronRight,
+    Clock3,
+    History,
+    NotebookPen,
+    Plane,
+    Scale,
+    TimerOffIcon,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 import AccrualButton from '@/components/Leave/AccrualButton';
 import AccrualDialog from '@/components/Leave/AccrualDialog';
 import BalanceCard from '@/components/Leave/BalanceCard';
+import type { Balance } from '@/components/Leave/BalanceCard';
 import { HistoryColumns } from '@/components/Leave/columns/HistoryColumn';
 import FilterButton from '@/components/Leave/FilterButton';
 import LeaveForm from '@/components/Leave/LeaveForm';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
 import UndertimeForm from '@/components/Leave/UndertimeForm';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     Collapsible,
     CollapsibleContent,
@@ -15,160 +32,221 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useFlashToast from '@/components/useFlashToast';
 import { filteredDateName, readFiltersFromUrl } from '@/lib/utils';
-import getUserBalanceOption from '@/queries/fetchUserBalance';
+import getEmployeeBalanceOption from '@/queries/fetchEmployeeBalance';
 import leaves from '@/routes/leaves';
-import { FlashMessageProp, User } from '@/types';
-import { Head } from '@inertiajs/react';
-import { useQuery } from '@tanstack/react-query';
-import {
-    Calendar,
-    NotebookPen,
-    Plane,
-    Scale,
-    TableCellsMerge,
-    TimerOffIcon,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
+import type { EmployeeSummary, FlashMessageProp } from '@/types';
 
 type PageProp = {
-    user: User;
-    flash: {
-        success: FlashMessageProp | null;
-    };
+    user: EmployeeSummary;
+    flash: { success: FlashMessageProp | null };
     filters: { month: string; year: string };
 };
 
-export default function UserBalance({ user, flash, filters }: PageProp) {
-    // const [date, setDate] = useRemember(
-    //     filters?.month && filters?.year
-    //         ? { month: String(filters.month), year: String(filters.year) }
-    //         : readFiltersFromUrl(),
-    //     'Filing:filters',
-    // );
+const getInitials = (name: string) =>
+    name
+        .split(' ')
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
 
+export default function EmployeeBalance({ user, flash, filters }: PageProp) {
     const [date, setDate] = useState(
         filters?.month && filters?.year
-            ? {
-                  month: String(filters.month),
-                  year: String(filters.year),
-              }
+            ? { month: String(filters.month), year: String(filters.year) }
             : readFiltersFromUrl(),
     );
-
-    useEffect(() => {
-        if (filters?.month && filters?.year) {
-            setDate({
-                month: String(filters.month),
-                year: String(filters.year),
-            });
-        }
-    }, [filters?.month, filters?.year]);
-
     const [page, setPage] = useState(1);
-
     const [openLeave, setOpenLeave] = useState(false);
-
     const [openUndertime, setOpenUndertime] = useState(false);
 
     function handleFilter(key: 'month' | 'year', value: string) {
-        setDate((prev) => ({
-            ...prev,
-            [key]: value,
-        }));
+        setDate((current) => ({ ...current, [key]: value }));
+        setPage(1);
     }
 
     const { data: userData, isFetching } = useQuery(
-        getUserBalanceOption(date.month, date.year, user.id, page),
+        getEmployeeBalanceOption(date.month, date.year, user.id, page),
     );
 
+    const balances = useMemo(
+        () => userData?.balances ?? [],
+        [userData?.balances],
+    );
     const transactions = userData?.transactions;
-    const needsInitialAccrual =
-        user?.employee_type === 'new employee' ||
-        user?.employee_type === 'transferee';
+    const needsInitialAccrual = ['new employee', 'transferee'].includes(
+        user.employee_type ?? '',
+    );
+
+    const summary = useMemo(
+        () => ({
+            available: balances.reduce(
+                (total: number, item: Balance) => total + Number(item.current),
+                0,
+            ),
+            used: balances.reduce(
+                (total: number, item: Balance) => total + Number(item.used),
+                0,
+            ),
+            monthly: balances.reduce(
+                (total: number, item: Balance) =>
+                    total + Number(item.monthly_accrual),
+                0,
+            ),
+        }),
+        [balances],
+    );
 
     useFlashToast(flash);
 
     return (
         <>
-            <Head title="Leaves" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl md:p-12">
-                <div>
-                    <h4 className="text-md flex items-center gap-1 font-bold">
-                        <Calendar />
-                        {filteredDateName(date.month, date.year)}
-                    </h4>
-                </div>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-4xl font-bold dark:text-accent">
-                            {user.name}
-                        </h1>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {userData?.hasAccrual &&
-                            (needsInitialAccrual ? (
-                                <AccrualDialog
-                                    filters={date}
-                                    user_id={user.id}
-                                />
-                            ) : (
-                                <AccrualButton
-                                    filters={date}
-                                    user_id={user.id}
-                                />
-                            ))}
-
-                        {/* {userData?.hasAccrual && (
-                            <AccrualButton filters={date} user_id={user?.id} />
-                        )} */}
-
-                        {date && (
+            <Head title={`${user.name} - Leave Balance`} />
+            <div className="flex w-full flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+                <Card className="gap-0 overflow-hidden border-0 bg-gradient-to-br from-sky-500/10 via-card to-emerald-500/5 shadow-sm">
+                    <CardHeader className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex items-center gap-4">
+                            <Avatar className="size-16 border-4 border-background shadow-sm">
+                                <AvatarFallback className="bg-sky-100 text-lg font-bold text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                                    {getInitials(user.name)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h1 className="text-2xl font-bold tracking-tight">
+                                        {user.name}
+                                    </h1>
+                                    <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700 capitalize dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                                        Active employee
+                                    </Badge>
+                                </div>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Employee #{user.id} · Leave management
+                                    center
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {userData?.hasAccrual &&
+                                (needsInitialAccrual ? (
+                                    <AccrualDialog
+                                        filters={date}
+                                        employee_id={user.id}
+                                    />
+                                ) : (
+                                    <AccrualButton
+                                        filters={date}
+                                        employee_id={user.id}
+                                    />
+                                ))}
                             <FilterButton
                                 key={`${date.month}-${date.year}`}
                                 handleFilter={handleFilter}
                                 date={date}
                             />
-                        )}
-                    </div>
-                </div>
-                <Tabs defaultValue="balance" className="space-y-6">
-                    <TabsList variant="line">
+                        </div>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 border-t border-border/60 p-4 sm:grid-cols-3">
+                        <div className="flex items-center gap-3 rounded-lg bg-background/60 p-3">
+                            <div className="rounded-md bg-sky-500/10 p-2 text-sky-600 dark:text-sky-300">
+                                <Calendar className="size-4" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                                    Viewing period
+                                </p>
+                                <p className="text-sm font-semibold">
+                                    {filteredDateName(date.month, date.year)}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-lg bg-background/60 p-3">
+                            <div className="rounded-md bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-300">
+                                <Scale className="size-4" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                                    Available balance
+                                </p>
+                                <p className="text-sm font-semibold">
+                                    {summary.available.toFixed(3)} days
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-lg bg-background/60 p-3">
+                            <div className="rounded-md bg-amber-500/10 p-2 text-amber-600 dark:text-amber-300">
+                                <Clock3 className="size-4" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                                    Used this period
+                                </p>
+                                <p className="text-sm font-semibold">
+                                    {summary.used.toFixed(3)} days
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Tabs defaultValue="balance" className="space-y-5">
+                    <TabsList
+                        variant="line"
+                        className="w-fit max-w-full overflow-x-auto"
+                    >
                         <TabsTrigger value="balance">
-                            <Scale className="mr-2 h-4 w-4" />
-                            Balances
+                            <Scale className="mr-2 size-4" /> Balances
                         </TabsTrigger>
-
                         <TabsTrigger value="table">
-                            <TableCellsMerge className="mr-2 h-4 w-4" />
-                            History
+                            <History className="mr-2 size-4" /> History
                         </TabsTrigger>
-
                         <TabsTrigger value="form">
-                            <NotebookPen className="mr-2 h-4 w-4" />
-                            Form
+                            <NotebookPen className="mr-2 size-4" /> Actions
                         </TabsTrigger>
                     </TabsList>
 
-                    {/* Balance */}
-                    <TabsContent value="balance">
-                        <div className="grid gap-4 md:grid-cols-3">
-                            {userData?.balances?.map((balance, index) => (
+                    <TabsContent value="balance" className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="font-semibold">
+                                    Leave balances
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Available, used, and estimated leave for
+                                    this period.
+                                </p>
+                            </div>
+                            <Badge
+                                variant="secondary"
+                                className="hidden sm:inline-flex"
+                            >
+                                Monthly accrual: {summary.monthly.toFixed(3)}{' '}
+                                days
+                            </Badge>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {balances.map((balance: Balance) => (
                                 <BalanceCard
                                     key={balance.leave_type}
                                     balance={balance}
                                     isFetching={isFetching}
                                 />
-                            ))}{' '}
+                            ))}
                         </div>
                     </TabsContent>
 
-                    {/* History */}
                     <TabsContent value="table" className="space-y-4">
+                        <div>
+                            <h2 className="font-semibold">Leave history</h2>
+                            <p className="text-sm text-muted-foreground">
+                                Review accruals, deductions, and filed
+                                transactions.
+                            </p>
+                        </div>
                         <DataTable
                             data={transactions?.data}
                             columns={HistoryColumns}
                         />
-
                         <PaginationButton
                             currentPage={transactions?.current_page ?? 1}
                             lastPage={transactions?.last_page ?? 1}
@@ -177,36 +255,61 @@ export default function UserBalance({ user, flash, filters }: PageProp) {
                         />
                     </TabsContent>
 
-                    {/* Form */}
-                    <TabsContent value="form">
+                    <TabsContent
+                        value="form"
+                        className="grid gap-4 lg:grid-cols-2"
+                    >
                         <Collapsible
-                            className={`max-w-5xl rounded-lg bg-background/20 p-8 ${openLeave ? 'border shadow-md' : ''} md:col-span-1 dark:border-accent/40`}
                             open={openLeave}
                             onOpenChange={setOpenLeave}
+                            className="rounded-xl border bg-card shadow-sm"
                         >
-                            <CollapsibleTrigger className="flex items-center gap-2">
-                                <p className="text-md mb-4 inline-flex items-center gap-2 font-semibold dark:text-accent">
-                                    <Plane />
-                                    Leave Form
-                                </p>
+                            <CollapsibleTrigger className="flex w-full items-center justify-between p-5 text-left">
+                                <span className="flex items-center gap-3">
+                                    <span className="rounded-lg bg-sky-500/10 p-2 text-sky-600 dark:text-sky-300">
+                                        <Plane className="size-4" />
+                                    </span>
+                                    <span>
+                                        <span className="block font-semibold">
+                                            File leave
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            Create a new leave transaction
+                                        </span>
+                                    </span>
+                                </span>
+                                <ChevronRight
+                                    className={`size-4 text-muted-foreground transition-transform ${openLeave ? 'rotate-90' : ''}`}
+                                />
                             </CollapsibleTrigger>
-                            <CollapsibleContent>
+                            <CollapsibleContent className="border-t p-5">
                                 <LeaveForm user={user} />
                             </CollapsibleContent>
                         </Collapsible>
-
                         <Collapsible
-                            className={`max-w-5xl rounded-lg bg-background/20 p-8 ${openUndertime ? 'border shadow-md' : ''} md:col-span-1 dark:border-accent/40`}
                             open={openUndertime}
                             onOpenChange={setOpenUndertime}
+                            className="rounded-xl border bg-card shadow-sm"
                         >
-                            <CollapsibleTrigger>
-                                <p className="text-md mb-4 inline-flex items-center gap-2 font-semibold dark:text-accent">
-                                    <TimerOffIcon />
-                                    Undertime Form
-                                </p>
+                            <CollapsibleTrigger className="flex w-full items-center justify-between p-5 text-left">
+                                <span className="flex items-center gap-3">
+                                    <span className="rounded-lg bg-amber-500/10 p-2 text-amber-600 dark:text-amber-300">
+                                        <TimerOffIcon className="size-4" />
+                                    </span>
+                                    <span>
+                                        <span className="block font-semibold">
+                                            Record undertime
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            Log tardiness or undertime
+                                        </span>
+                                    </span>
+                                </span>
+                                <ChevronRight
+                                    className={`size-4 text-muted-foreground transition-transform ${openUndertime ? 'rotate-90' : ''}`}
+                                />
                             </CollapsibleTrigger>
-                            <CollapsibleContent>
+                            <CollapsibleContent className="border-t p-5">
                                 <UndertimeForm user={user} />
                             </CollapsibleContent>
                         </Collapsible>
@@ -217,14 +320,9 @@ export default function UserBalance({ user, flash, filters }: PageProp) {
     );
 }
 
-UserBalance.layout = {
+EmployeeBalance.layout = {
     breadcrumbs: [
-        {
-            title: 'Users Filing',
-            href: leaves.data(),
-        },
-        {
-            title: 'User Balance',
-        },
+        { title: 'Users Filing', href: leaves.data() },
+        { title: 'User Balance' },
     ],
 };

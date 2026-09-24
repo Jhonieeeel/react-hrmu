@@ -1,4 +1,4 @@
-import { User } from '@/types';
+import { EmployeeSummary } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Button } from '../ui/button';
 import {
@@ -18,12 +18,12 @@ import { Spinner } from '../ui/spinner';
 import { isBefore, parseISO } from 'date-fns';
 
 type FormProp = {
-    user: User;
+    user: EmployeeSummary;
 };
 
 export default function LeaveForm({ user }: FormProp) {
     const form = useForm({
-        user_id: user?.id,
+        employee_id: user?.id,
         event_type: 'deduction',
         event_tag: 'leave',
         balance: 0,

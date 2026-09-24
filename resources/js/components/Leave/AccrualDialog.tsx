@@ -22,12 +22,12 @@ import { addMonths, endOfMonth, format, startOfMonth } from 'date-fns';
 
 type InitialAccrualProps = {
     filters: Filters;
-    user_id: number;
+    employee_id: number;
 };
 
 export default function AccrualDialog({
     filters,
-    user_id,
+    employee_id,
 }: InitialAccrualProps) {
     const base = new Date(Number(filters.year), Number(filters.month) - 1, 1);
 
@@ -37,7 +37,7 @@ export default function AccrualDialog({
     const ends_at = format(endOfMonth(targetMonth), 'yyyy-MM-dd');
 
     const form = useForm({
-        user_id: user_id,
+        employee_id: employee_id,
         vacation_leave: 'vacation leave',
         vl_balance: 0,
         sick_leave: 'sick leave',
@@ -49,7 +49,7 @@ export default function AccrualDialog({
     function handleSubmit(e: React.SubmitEvent) {
         e.preventDefault();
 
-        form.submit(leaves.initial_accrual(form.data.user_id), {
+        form.submit(leaves.initial_accrual(form.data.employee_id), {
             onSuccess: () => {
                 form.reset();
             },

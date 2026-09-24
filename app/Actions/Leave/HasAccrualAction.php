@@ -3,13 +3,13 @@
 namespace App\Actions\Leave;
 
 use App\Models\Leave;
-use App\Models\User;
+use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HasAccrualAction
 {
-    public function checkUserStatus(Request $request, User $user): bool
+    public function checkEmployeeStatus(Request $request, Employee $user): bool
     {
         $date = $request->filled('month') && $request->filled('year')
             ? Carbon::create($request->year, $request->month, 1)

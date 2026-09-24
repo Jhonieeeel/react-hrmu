@@ -47,15 +47,15 @@ const mainNavItems: NavItem[] = [
         icon: CalendarClock,
     },
     {
-        title: 'Users',
+        title: 'Employees',
         href: users.index(),
         icon: User2,
     },
-    {
-        title: 'Pass Slip',
-        href: slip.index(),
-        icon: FileTextIcon,
-    },
+    // {
+    //     title: 'Pass Slip',
+    //     href: slip.index(),
+    //     icon: FileTextIcon,
+    // },
 ];
 
 const footerNavItems: NavItem[] = [

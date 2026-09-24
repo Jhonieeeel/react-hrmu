@@ -3,7 +3,7 @@
 namespace App\Actions\Leave;
 
 use App\Models\Leave;
-use App\Models\User;
+use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -88,7 +88,7 @@ class ReplayBalanceAction
         8 => 1.000,
     ];
 
-    public static function UserBalance(Request $request, User $user): array
+    public static function EmployeeBalance(Request $request, Employee $user): array
     {
         $date = $request->filled('month') && $request->filled('year')
             ? Carbon::create($request->year, $request->month, 1)
@@ -97,7 +97,7 @@ class ReplayBalanceAction
         $start = Carbon::create(2023, 1, 1); // jan 1 2023
 
         $current = Leave::query()
-            ->where('user_id', $user->id)
+            ->where('employee_id', $user->id)
             ->whereBetween('starts_at', [
                 $start,
                 $date->copy()->endOfMonth(),
@@ -105,7 +105,7 @@ class ReplayBalanceAction
             ->get(); // query all transactions
 
         $previous = Leave::query()
-            ->where('user_id', $user->id)
+            ->where('employee_id', $user->id)
             ->whereDate('starts_at', '<', $date->copy()->startOfMonth())
             ->get(); // query all prev transactions
 
@@ -116,44 +116,43 @@ class ReplayBalanceAction
             ->toArray();
     }
 
-    public static function UsersBalances(Carbon $date, Collection $users): array
+    public static function EmployeesBalances(Carbon $date, Collection $users): array
     {
         $userIds = $users->pluck('id');
         $start = Carbon::create(2023, 1, 1);
 
         $allCurrent = Leave::query()
-            ->whereIn('user_id', $userIds)
+            ->whereIn('employee_id', $userIds)
             ->whereBetween('starts_at', [
                 $start,
                 $date->copy()->endOfMonth(),
             ])
             ->get()
-            ->groupBy('user_id');
+            ->groupBy('employee_id');
 
         $currentEvents = Leave::query()
-            ->whereIn('user_id', $userIds)
+            ->whereIn('employee_id', $userIds)
             ->whereBetween('starts_at', [
                 $date->copy()->startOfMonth(),
                 $date->copy()->endOfMonth(),
             ])
             ->get()
-            ->groupBy('user_id');
+            ->groupBy('employee_id');
 
 
         $allPrevious = Leave::query()
-            ->whereIn('user_id', $userIds)
+            ->whereIn('employee_id', $userIds)
             ->whereDate('starts_at', '<', $date->copy()->startOfMonth())
             ->get()
-            ->groupBy('user_id');
+            ->groupBy('employee_id');
 
-        return $users->mapWithKeys(function (User $user) use ($allCurrent, $allPrevious, $date, $currentEvents) {
+        return $users->mapWithKeys(function (Employee $user) use ($allCurrent, $allPrevious, $date, $currentEvents) {
 
             $userCurrent = $allCurrent->get($user->id, collect());
             $previous = $allPrevious->get($user->id, collect());
 
             $userCurrentEvents = $currentEvents->get($user->id, collect());
 
-            info($userCurrentEvents);
 
             $balances = self::replayBalances($userCurrent, $previous, $date);
 
@@ -174,7 +173,7 @@ class ReplayBalanceAction
 
             return [
                 $user->id => [
-                    'name' => $user->name,
+                    'name' => $user->user?->name ?? 'Unknown employee',
                     'balances' => $newBalances,
                     'events' => $deductionData['events'],
                     'undertimeCount' => $deductionData['undertimeCount'],

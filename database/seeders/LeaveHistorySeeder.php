@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Employee;
 use App\Models\Leave;
-use App\Models\User;
 
 /**
  * Replays the rest of a full year's transaction history (Feb 2023 -> Jan
@@ -18,10 +18,10 @@ use App\Models\User;
  *
  *         $balances = LeaveFactory::balances()[$index];
  *         foreach ($balances as $leaveType => $balance) {
- *             Leave::factory()->for($user)->accrual($leaveType, $balance)->create();
+ *             Leave::factory()->for($employee, 'employee')->accrual($leaveType, $balance)->create();
  *         }
  *
- *         Leave::factory()->for($user)->monthlyFilingPlaceholder()->create();
+ *         Leave::factory()->for($employee, 'employee')->monthlyFilingPlaceholder()->create();
  *
  *         if ($index === 0) {
  *             LeaveHistorySeeder::replayEmployeeOne($user);
@@ -30,25 +30,25 @@ use App\Models\User;
  */
 class LeaveHistorySeeder
 {
-    public static function replayEmployeeOne(User $user): void
+    public static function replayEmployeeOne(Employee $employee): void
     {
         foreach (self::months() as $month) {
 
             foreach ($month['accruals'] as [$leaveType, $balance]) {
                 Leave::factory()
-                    ->for($user)
+                    ->for($employee, 'employee')
                     ->accrual($leaveType, $balance, $month['starts_at'], $month['ends_at'])
                     ->create();
             }
 
             Leave::factory()
-                ->for($user)
+                ->for($employee, 'employee')
                 ->monthlyFiling($month['starts_at'], $month['ends_at'], $month['filing_remarks'], $month['filing_completed'])
                 ->create();
 
             foreach ($month['deductions'] as [$leaveType, $eventTag, $balance, $startsAt, $endsAt]) {
                 Leave::factory()
-                    ->for($user)
+                    ->for($employee, 'employee')
                     ->deduction($leaveType, $eventTag, $balance, $startsAt, $endsAt)
                     ->create();
             }

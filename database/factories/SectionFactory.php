@@ -23,6 +23,9 @@ class SectionFactory extends Factory
 
     public function definition(): array
     {
-       return [];
+        return [
+            'section_name' => fake()->unique()->words(3, true),
+            'section_code' => strtoupper(fake()->unique()->lexify('S###')),
+        ];
     }
 }

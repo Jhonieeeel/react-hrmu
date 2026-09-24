@@ -8,7 +8,7 @@ use Spatie\LaravelData\Data;
 class LeaveDTO extends Data
 {
     public function __construct(
-        public ?int $user_id,
+        public ?int $employee_id,
         public string $leave_type,
         public string $event_type,
         public ?string $event_tag,

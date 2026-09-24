@@ -58,7 +58,7 @@ export function FilingDialog({ children, leave }: FilingProp) {
             <DialogContent className="sm:max-w-md">
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <DialogHeader>
-                        <DialogTitle>{leave.user?.name}</DialogTitle>
+                        <DialogTitle>{leave.employee?.user?.name}</DialogTitle>
                         <DialogDescription>
                             Update the filing status for this leave.
                         </DialogDescription>

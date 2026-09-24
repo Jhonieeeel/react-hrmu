@@ -34,7 +34,7 @@ export default function LeaveCalendar({ users }: PageProps) {
         end: '',
         user: [],
         status: false,
-        user_id: 0,
+        employee_id: 0,
         calendarTitle: '',
         calendarTheme: '',
     });
@@ -62,7 +62,7 @@ export default function LeaveCalendar({ users }: PageProps) {
                     title: event.calendarTitle ?? '',
                     start: event.start.toString(),
                     end: event.end.toString(),
-                    user_id: event.user_id,
+                    employee_id: event.employee_id,
                     user: event.user,
                     calendarTitle: event.calendarTitle,
                     calendarTheme: calendarConfig[event.calendarId],

@@ -9,11 +9,11 @@ use App\Actions\Leave\ReplayBalanceAction;
 use App\Actions\Leave\CreateLeaveAction;
 use App\Actions\Leave\ExportPdfAction;
 use App\Actions\Leave\MonthlyAccrualAction;
-use App\Actions\Leave\UsersFilingAction;
+use App\Actions\Leave\EmployeesFilingAction;
 use App\Data\InitialAccrualDTO;
 use App\Data\LeaveDTO;
+use App\Models\Employee;
 use App\Models\Leave;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -59,7 +59,7 @@ class LeaveController extends Controller
 
     public function edit(Leave $leave)
     {
-        $leave->load('user');
+        $leave->load('employee.user');
 
         if (in_array($leave->event_tag, ['tardiness', 'undertime'])) {
             return Inertia::render('Leave/EditUndertimeForm', [
@@ -72,10 +72,14 @@ class LeaveController extends Controller
         ]);
     }
 
-    public function show(User $user, Request $request)
+    public function show(Employee $employee, Request $request)
     {
         return Inertia::render("Leave/UserBalance", [
-            'user' => $user,
+            'user' => [
+                'id' => $employee->id,
+                'name' => $employee->user?->name ?? 'Unknown employee',
+                'employee_type' => $employee->user?->employee_type,
+            ],
             'filters' => [
                 'month' => $request->input('month'),
                 'year' => $request->input('year'),
@@ -86,32 +90,36 @@ class LeaveController extends Controller
     public function update(Request $request, Leave $leave)
     {
         $validated = $request->validate([
-            'status' => ['required', 'boolean'],
-            'remarks' => ['required', 'string', 'max:1000'],
+            'employee_id' => ['sometimes', 'integer', 'exists:employees,id'],
+            'leave_type' => ['sometimes', 'string', 'max:255'],
+            'event_type' => ['sometimes', 'string', 'max:255'],
+            'event_tag' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'balance' => ['sometimes', 'numeric'],
+            'starts_at' => ['sometimes', 'date'],
+            'ends_at' => ['sometimes', 'date', 'after_or_equal:starts_at'],
+            'status' => ['sometimes', 'boolean'],
+            'remarks' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ]);
 
-        $leave->update([
-            'status' => $validated['status'],
-            'remarks' => $validated['remarks']
-        ]);
+        $leave->fill($validated)->save();
 
-        return to_route("leaves.index")->with('success', [
-            'message' =>  'Monthly Filing Updated',
-            'id' => Str::uuid()
+        return back()->with('success', [
+            'message' => 'Leave updated successfully.',
+            'id' => Str::uuid(),
         ]);
     }
 
     public function userBalance(
         Request $request,
-        User $user,
+        Employee $employee,
         ReplayBalanceAction $replayBalance,
         LeaveHistoryAction $leaveHistory,
         HasAccrualAction $hasAccrual
     ) {
-        $balances = $replayBalance->UserBalance($request, $user);
-        $transactions = $leaveHistory->transactions($request, $user);
-        $accrualStatus = $hasAccrual->checkUserStatus($request, $user);
-        $employeeType = $user->employee_type;
+        $balances = $replayBalance->EmployeeBalance($request, $employee);
+        $transactions = $leaveHistory->transactions($request, $employee);
+        $accrualStatus = $hasAccrual->checkEmployeeStatus($request, $employee);
+        $employeeType = $employee->user?->employee_type;
 
         return response()->json([
             'balances' => $balances,
@@ -126,9 +134,9 @@ class LeaveController extends Controller
     }
 
 
-    public function filing(Request $request, UsersFilingAction $usersFiling)
+    public function filing(Request $request, EmployeesFilingAction $employeesFiling)
     {
-        return response()->json($usersFiling($request));
+        return response()->json($employeesFiling($request));
     }
 
     public function accrual(Request $request, LeaveDTO $data, MonthlyAccrualAction $action)
@@ -142,7 +150,7 @@ class LeaveController extends Controller
         info($date->month);
 
         return to_route('leaves.show', [
-            'user' => $data->user_id,
+            'employee' => $data->employee_id,
             'month' => $date->month,
             'year' => $date->year
         ])->with('success', [
@@ -158,9 +166,11 @@ class LeaveController extends Controller
         $year = $request->input("year", now()->year);
 
         $date = Carbon::create($year, $month, 1);
-        $users = User::select(['id', 'name'])->get();
+        $employees = Employee::query()
+            ->with('user:id,name')
+            ->get(['id', 'user_id']);
 
-        $usersBalance = $balanceAction->UsersBalances($date, $users);
+        $usersBalance = $balanceAction->EmployeesBalances($date, $employees);
         $exportUrl = $export->exportPdf($usersBalance);
 
         return to_route(

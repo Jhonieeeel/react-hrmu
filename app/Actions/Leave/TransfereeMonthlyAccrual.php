@@ -11,7 +11,7 @@ class TransfereeMonthlyAccrual
     public function monthlyFilingAccrual(LeaveDTO $data)
     {
         Leave::create([
-            'user_id' => $data->user_id,
+            'employee_id' => $data->employee_id,
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
             'event_tag' => 'filing',

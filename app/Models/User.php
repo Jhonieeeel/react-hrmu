@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -47,16 +47,17 @@ class User extends Authenticatable
         ];
     }
 
-    public function leaves(): HasMany
-    {
-        return $this->hasMany(Leave::class);
-    }
-
     public function passSlips(): HasMany {
         return $this->hasMany(PassSlip::class);
     }
 
-    public function employee(): HasOne {
-        return $this->hasOne(Employee::class);
+    public function leaves(): HasManyThrough
+    {
+        return $this->hasManyThrough(Leave::class, Employee::class);
+    }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
     }
 }

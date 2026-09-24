@@ -1,4 +1,4 @@
-import { User } from '@/types';
+import { EmployeeSummary } from '@/types';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '../ui/field';
 import DatePicker from './DatePicker';
 import { useForm } from '@inertiajs/react';
@@ -14,14 +14,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../ui/spinner';
 
 type UndertimeProp = {
-    user: User;
+    user: EmployeeSummary;
 };
 
 export default function UndertimeForm({ user }: UndertimeProp) {
     const [time, setTime] = useState('08:00:00');
 
     const form = useForm({
-        user_id: user.id,
+        employee_id: user.id,
         leave_type: 'vacation leave',
         event_type: 'deduction',
         event_tag: '',
@@ -99,7 +99,7 @@ export default function UndertimeForm({ user }: UndertimeProp) {
                         <ToggleGroup
                             type="single"
                             value={form.data.event_tag}
-                            disabled={!form.data.user_id}
+                            disabled={!form.data.employee_id}
                             onValueChange={(value) =>
                                 value && form.setData('event_tag', value)
                             }

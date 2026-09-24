@@ -6,7 +6,7 @@ use App\Models\Leave;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class UsersFilingAction
+class EmployeesFilingAction
 {
     public function __invoke(Request $request)
     {
@@ -14,7 +14,7 @@ class UsersFilingAction
             ? Carbon::create($request->year, $request->month, 1)
             : Carbon::create(now()->year, now()->month, 1);
 
-        return Leave::query()->with('user:id,name')
+        return Leave::query()->with('employee.user:id,name')
             ->where('leave_type', 'monthly filing')
             ->whereBetween(
                 'starts_at',

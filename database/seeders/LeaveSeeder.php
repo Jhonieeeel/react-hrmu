@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Employee;
 use App\Models\Leave;
 use Illuminate\Database\Seeder;
 
@@ -15,6 +16,13 @@ class LeaveSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->rows() as $row) {
+            $employee = Employee::query()
+                ->where('user_id', $row['user_id'])
+                ->firstOrFail();
+
+            unset($row['user_id']);
+            $row['employee_id'] = $employee->id;
+
             Leave::create($row);
         }
     }

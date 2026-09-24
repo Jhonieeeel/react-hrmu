@@ -19,7 +19,7 @@ type EditFormProp = {
 
 export default function EditUndertimeForm({ leave }: EditFormProp) {
     const form = useForm({
-        user_id: leave.user_id,
+        employee_id: leave.employee_id,
         leave_type: leave.leave_type,
         event_type: leave.event_type,
         event_tag: leave.event_tag,
@@ -85,7 +85,7 @@ export default function EditUndertimeForm({ leave }: EditFormProp) {
     }
 
     return (
-        <div className="space-y-6 p-14">
+        <div className="space-y-6 px-4 py-6 md:px-8 md:py-8">
             <div>
                 <h1 className="text-4xl font-semibold dark:text-accent">
                     Edit Undertime
@@ -101,7 +101,7 @@ export default function EditUndertimeForm({ leave }: EditFormProp) {
                         <Field>
                             <FieldLabel>User</FieldLabel>
                             <Input
-                                value={leave?.user?.name}
+                                value={leave?.employee?.user?.name}
                                 disabled
                                 className="font-semibold"
                             />
@@ -114,7 +114,7 @@ export default function EditUndertimeForm({ leave }: EditFormProp) {
                             <ToggleGroup
                                 type="single"
                                 value={form.data.event_tag}
-                                disabled={!form.data.user_id}
+                                disabled={!form.data.employee_id}
                                 onValueChange={(value) =>
                                     value && form.setData('event_tag', value)
                                 }

@@ -32,7 +32,7 @@ type FilingProp = {
 export function EditHistoryDialog({ leave, open, onOpenChange }: FilingProp) {
     const form = useForm({
         id: leave?.id,
-        user_id: leave?.user_id,
+        employee_id: leave?.employee_id,
         leave_type: leave?.leave_type,
         event_type: leave?.event_type,
         event_tag: leave?.event_tag,
