@@ -283,7 +283,11 @@ export default function EmployeeBalance({ user, flash, filters }: PageProp) {
                                 />
                             </CollapsibleTrigger>
                             <CollapsibleContent className="border-t p-5">
-                                <LeaveForm user={user} />
+                                <LeaveForm
+                                    key={`leave-${date.month}-${date.year}`}
+                                    user={user}
+                                    date={date}
+                                />
                             </CollapsibleContent>
                         </Collapsible>
                         <Collapsible
@@ -310,7 +314,11 @@ export default function EmployeeBalance({ user, flash, filters }: PageProp) {
                                 />
                             </CollapsibleTrigger>
                             <CollapsibleContent className="border-t p-5">
-                                <UndertimeForm user={user} />
+                                <UndertimeForm
+                                    key={`undertime-${date.month}-${date.year}`}
+                                    user={user}
+                                    date={date}
+                                />
                             </CollapsibleContent>
                         </Collapsible>
                     </TabsContent>

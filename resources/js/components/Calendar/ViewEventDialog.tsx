@@ -12,9 +12,10 @@ import {
 import { Button } from '@/components/ui/button';
 import calendar from '@/routes/calendar';
 import { CalendarEvent, User } from '@/types';
-import { useForm } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { CalendarCheck, CalendarDays, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Props = {
     open: boolean;
@@ -69,17 +70,21 @@ export default function ViewEventDialog({
     const start = formatDate(calendarEvent.start);
     const end = formatDate(calendarEvent.end);
     const isDark = useIsDarkMode();
+    const queryClient = useQueryClient();
 
     const theme = isDark
         ? calendarEvent.calendarTheme?.darkColors
         : calendarEvent.calendarTheme?.lightColors;
 
-    const deleteForm = useForm({
-        id: Number(calendarEvent?.id),
-    });
-
-    function handleDelete(e: React.MouseEvent) {
-        e.preventDefault();
+    function handleDelete() {
+        router.delete(calendar.destroy({ leave: Number(calendarEvent.id) }).url, {
+            onSuccess: () => {
+                queryClient.invalidateQueries({
+                    queryKey: ['calendarEvents'],
+                });
+                onOpenChange(false);
+            },
+        });
     }
 
     return (
@@ -133,7 +138,7 @@ export default function ViewEventDialog({
                     Cancel
                 </Button>
                 <div className="flex gap-2">
-                    {/* <AlertDialog>
+                    <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm">
                                 <Trash2 size={13} className="mr-1" /> Delete
@@ -156,7 +161,7 @@ export default function ViewEventDialog({
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
-                    </AlertDialog> */}
+                    </AlertDialog>
                     <Button onClick={() => setMode('edit')} size="sm">
                         <Pencil size={13} className="mr-1" /> Edit event
                     </Button>

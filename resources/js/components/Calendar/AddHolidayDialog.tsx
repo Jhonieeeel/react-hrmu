@@ -21,7 +21,7 @@ import { useForm } from '@inertiajs/react';
 import { Input } from '@/components/ui/input';
 import React from 'react';
 import { Spinner } from '@/components/ui/spinner';
-import calendar from '@/routes/calendar';
+import holidays from '@/routes/holidays';
 
 const months = [
     { value: '1', label: 'January' },
@@ -47,7 +47,7 @@ export default function AddHolidayDialog() {
 
     function handleSubmit(e: React.SubmitEvent) {
         e.preventDefault();
-        form.submit(calendar.store(), {
+        form.submit(holidays.store(), {
             onSuccess: () => {
                 form.reset();
             },

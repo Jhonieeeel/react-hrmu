@@ -12,12 +12,14 @@ import { HOURS_TABLE, MINUTES_TABLE } from '../Calendar/config/time';
 import undertime from '@/routes/undertime';
 import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../ui/spinner';
+import { defaultDateFromFilters } from '@/lib/utils';
 
 type UndertimeProp = {
     user: EmployeeSummary;
+    date?: { month: string; year: string };
 };
 
-export default function UndertimeForm({ user }: UndertimeProp) {
+export default function UndertimeForm({ user, date }: UndertimeProp) {
     const [time, setTime] = useState('08:00:00');
 
     const form = useForm({
@@ -26,8 +28,8 @@ export default function UndertimeForm({ user }: UndertimeProp) {
         event_type: 'deduction',
         event_tag: '',
         balance: 0,
-        starts_at: '',
-        ends_at: '',
+        starts_at: defaultDateFromFilters(date?.month, date?.year),
+        ends_at: defaultDateFromFilters(date?.month, date?.year),
         status: false,
         remarks: '',
     });
@@ -70,6 +72,7 @@ export default function UndertimeForm({ user }: UndertimeProp) {
         form.submit(undertime.store(), {
             onSuccess: () => {
                 form.reset();
+
                 queryClient.invalidateQueries({
                     queryKey: ['leaves'],
                 });

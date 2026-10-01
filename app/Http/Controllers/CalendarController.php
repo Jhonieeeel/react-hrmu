@@ -10,6 +10,8 @@ use App\Actions\Leave\CreateLeaveAction;
 use App\Data\LeaveDTO;
 use App\Models\Employee;
 use App\Models\Holiday;
+use App\Models\Leave;
+use Illuminate\Support\Str;
 
 class CalendarController extends Controller
 {
@@ -43,5 +45,36 @@ class CalendarController extends Controller
         $action->createLeaves($weekdays, $leaveData);
 
         return to_route('calendar.index')->with('success', 'Calendar Leave Added');
+    }
+
+    public function update(Request $request, Leave $leave)
+    {
+        $validated = $request->validate([
+            'employee_id' => ['sometimes', 'integer', 'exists:employees,id'],
+            'leave_type' => ['sometimes', 'string', 'max:255'],
+            'event_type' => ['sometimes', 'string', 'max:255'],
+            'event_tag' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'balance' => ['sometimes', 'numeric'],
+            'starts_at' => ['sometimes', 'date'],
+            'ends_at' => ['sometimes', 'date', 'after_or_equal:starts_at'],
+            'status' => ['sometimes', 'boolean'],
+        ]);
+
+        $leave->fill($validated)->save();
+
+        return back()->with('success', [
+            'message' => 'Calendar event updated successfully.',
+            'id' => Str::uuid(),
+        ]);
+    }
+
+    public function destroy(Leave $leave)
+    {
+        $leave->delete();
+
+        return back()->with('success', [
+            'message' => 'Calendar event deleted successfully.',
+            'id' => Str::uuid(),
+        ]);
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PassSlipController;
@@ -37,6 +38,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('organizations/units', [OrganizationController::class, 'storeUnit'])->name('units.store');
     Route::put('organizations/units/{unit}', [OrganizationController::class, 'updateUnit'])->name('units.update');
     Route::delete('organizations/units/{unit}', [OrganizationController::class, 'destroyUnit'])->name('units.destroy');
+
+    // Holiday CRUD
+    Route::post('holidays', [HolidayController::class, 'store'])->name('holidays.store');
+    Route::delete('holidays/{holiday}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
+
+    // Calendar event actions
+    Route::put('calendar/{leave}/update', [CalendarController::class, 'update'])->name('calendar.update');
+    Route::delete('calendar/{leave}/delete', [CalendarController::class, 'destroy'])->name('calendar.destroy');
 
     // PUT / POST
     Route::put("leaves/{leave}/update_filing", [LeaveController::class, 'update'])->name('leaves.update'); // for monthly filing

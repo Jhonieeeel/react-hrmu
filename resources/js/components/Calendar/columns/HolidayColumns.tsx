@@ -1,6 +1,5 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -10,12 +9,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import leaves from '@/routes/leaves';
-import users_info from '@/routes/users_info';
-import { Holiday, User } from '@/types';
-import { Link } from '@inertiajs/react';
-import { ColumnDef } from '@tanstack/react-table';
+import { monthName } from '@/lib/utils';
+import type { Holiday } from '@/types';
+import type { ColumnDef } from '@tanstack/react-table';
+import { router } from '@inertiajs/react';
 import { MoreHorizontal } from 'lucide-react';
+import holidays from '@/routes/holidays';
 
 export const HolidayColumns: ColumnDef<Holiday>[] = [
     {
@@ -32,6 +31,7 @@ export const HolidayColumns: ColumnDef<Holiday>[] = [
         header: () => <div className="text-left">Day</div>,
         cell: ({ row }) => {
             const day = row.original.day;
+
             return <div className="text-left font-medium">{day}</div>;
         },
     },
@@ -39,41 +39,43 @@ export const HolidayColumns: ColumnDef<Holiday>[] = [
         accessorKey: 'month',
         header: () => <div className="text-left">Month</div>,
         cell: ({ row }) => {
-            const month = row.original.month;
+            const month = monthName(row.original.month);
 
             return <div>{month}</div>;
         },
     },
-    // {
-    //     id: 'actions',
-    //     cell: ({ row }) => {
-    //         const user = row.original;
-    //         const leave = row.original;
+    {
+        id: 'actions',
+        cell: ({ row }) => {
+            const holiday = row.original;
 
-    //         return (
-    //             <DropdownMenu>
-    //                 <DropdownMenuTrigger asChild>
-    //                     <Button variant="ghost" className="h-8 w-8 p-0">
-    //                         <span className="sr-only">Open menu</span>
-    //                         <MoreHorizontal className="h-4 w-4" />
-    //                     </Button>
-    //                 </DropdownMenuTrigger>
-    //                 <DropdownMenuContent align="end">
-    //                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-    //                     <DropdownMenuSeparator />
-    //                     <DropdownMenuItem asChild>
-    //                         <Link
-    //                             href={users_info.show(user)}
-    //                             target="_blank"
-    //                             rel="noopener noreferrer"
-    //                             prefetch
-    //                         >
-    //                             View User
-    //                         </Link>
-    //                     </DropdownMenuItem>
-    //                 </DropdownMenuContent>
-    //             </DropdownMenu>
-    //         );
-    //     },
-    // },
+            function handleDelete() {
+                router.delete(holidays.destroy({ holiday: holiday.id! }).url);
+            }
+
+            return (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem
+                            onClick={handleDelete}
+                            className="text-destructive focus:text-destructive"
+                        >
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            );
+        },
+    },
 ];

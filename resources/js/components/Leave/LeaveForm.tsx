@@ -16,28 +16,30 @@ import { useQueryClient } from '@tanstack/react-query';
 import leaves from '@/routes/leaves';
 import { Spinner } from '../ui/spinner';
 import { isBefore, parseISO } from 'date-fns';
+import { defaultDateFromFilters } from '@/lib/utils';
 
 type FormProp = {
     user: EmployeeSummary;
+    date?: { month: string; year: string };
 };
 
-export default function LeaveForm({ user }: FormProp) {
+export default function LeaveForm({ user, date }: FormProp) {
     const form = useForm({
         employee_id: user?.id,
         event_type: 'deduction',
         event_tag: 'leave',
         balance: 0,
         leave_type: '',
-        starts_at: '',
-        ends_at: '',
+        starts_at: defaultDateFromFilters(date?.month, date?.year),
+        ends_at: defaultDateFromFilters(date?.month, date?.year),
     });
 
     function handleClear() {
         form.setData({
             ...form.data,
             leave_type: '',
-            starts_at: '',
-            ends_at: '',
+            starts_at: defaultDateFromFilters(date?.month, date?.year),
+            ends_at: defaultDateFromFilters(date?.month, date?.year),
         });
     }
 
