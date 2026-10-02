@@ -15,11 +15,19 @@ class Leave extends Model
      * `event_tag` values that represent a leave filing submitted by an employee
      * and therefore subject to the approval workflow.
      *
+     * `vacation leave` is the odd one out. It is only ever set when an employee
+     * files *force* leave: the leave_type stays 'force leave', but the tag marks
+     * it as a force-leave-to-vacation conversion so the balance engine folds it
+     * into the vacation leave credit (see ReplayBalanceAction). Because it
+     * originates from a filing, it has to wait for a decision like any other —
+     * treating it as an HR row made force leave silently self-approve and
+     * consume balance without ever appearing in the review queue.
+     *
      * Everything else in the ledger is written by HR (accruals, monthly filings,
-     * tardiness, undertime, absent, force-to-vacation conversions) and counts as
-     * approved the instant it is stored.
+     * tardiness, undertime, absent) and counts as approved the instant it is
+     * stored.
      */
-    public const FILED_LEAVE_TAGS = ['leave', 'cto', 'offset'];
+    public const FILED_LEAVE_TAGS = ['leave', 'cto', 'offset', 'vacation leave'];
 
     /**
      * Statuses a filing can hold once it has been submitted for review.

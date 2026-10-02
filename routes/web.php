@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Permission;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HolidayController;
@@ -10,14 +11,25 @@ use App\Http\Controllers\PassSlipController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UndertimeController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::get('/', function (Request $request) {
+    // Send each user to the landing page that matches their access: HR gets the
+    // workforce dashboard, everyone else gets their own balance.
+    if ($request->user()?->can(Permission::ViewAllBalances)) {
+        return to_route('dashboard');
+    }
+
+    return to_route('balance.mine');
+})->middleware('auth')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Route::inertia('dashboard', 'dashboard')->name('dashboard');
 
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])
+        ->middleware('permission:view all balances')
+        ->name('dashboard');
 
     // export
     Route::get('leaves/exporting_excel', [LeaveController::class, 'export'])
@@ -25,10 +37,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('leaves.export');
 
     // Pages
-    Route::get('leaves', [LeaveController::class, 'index'])->name('leaves.index');
+    Route::get('leaves', [LeaveController::class, 'index'])
+        ->middleware('permission:view all balances')
+        ->name('leaves.index');
     Route::get('leaves/{employee}', [LeaveController::class, 'show'])->name('leaves.show');
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::get('leaves/{leave}/edit_leave', [LeaveController::class, 'edit'])->name('leaves.edit');
+
+    // "My Balance" — the employee self-service entry point. Resolves the
+    // caller's own employee record, so no id is ever supplied by the browser.
+    Route::get('my/balance', [LeaveController::class, 'myBalance'])->name('balance.mine');
 
     // Leave review queue (HR). Approving or rejecting always acts on a whole
     // filing_group_id so a multi-segment request is never split.
@@ -94,12 +112,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Role assignment. Split out from the block above because it is
     // super-admin-only, while employee management is also open to the HR role.
     Route::middleware('permission:assign roles')->group(function () {
+        Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
         Route::put('users/{user}/roles', [RoleController::class, 'update'])->name('users.roles.update');
         Route::get('data/roles', [RoleController::class, 'options'])->name('roles.data');
+        Route::get('data/roles/users', [RoleController::class, 'users'])->name('roles.users');
+        Route::get('data/roles/{user}', [RoleController::class, 'show'])->name('roles.show');
     });
 
     // data
-    Route::get('data/leaves', [LeaveController::class, 'filing'])->name('leaves.data');
+    Route::get('data/leaves', [LeaveController::class, 'filing'])
+        ->middleware('permission:view all balances')
+        ->name('leaves.data');
     Route::get('data/{employee}/balance', [LeaveController::class, 'userBalance'])->name('leaves.balance');
     Route::get('data/calendar', [CalendarController::class, 'calendarEvents'])->name('calendar.data');
 

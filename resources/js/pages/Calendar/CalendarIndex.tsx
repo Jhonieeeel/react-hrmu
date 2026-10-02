@@ -22,10 +22,11 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useFlashToast from '@/components/useFlashToast';
+import { usePermissions } from '@/hooks/use-permissions';
 import calendar from '@/routes/calendar';
 import leaves from '@/routes/leaves';
-import type { FlashMessageProp, Holiday, User } from '@/types';
+import type { Holiday, User } from '@/types';
+import { Permissions } from '@/types/auth';
 
 type UpcomingLeave = {
     id: number;
@@ -41,7 +42,6 @@ type PageProps = {
     users: User[];
     upcomingLeaves: UpcomingLeave[];
     holidays: Holiday[];
-    flash: { success: FlashMessageProp | null };
 };
 
 const formatDate = (date: string) =>
@@ -53,9 +53,11 @@ export default function CalendarIndex({
     users,
     upcomingLeaves,
     holidays,
-    flash,
 }: PageProps) {
-    useFlashToast(flash);
+    const { can } = usePermissions();
+
+    // The link below points at the HR-only leave register.
+    const canViewAllBalances = can(Permissions.ViewAllBalances);
 
     return (
         <>
@@ -234,15 +236,17 @@ export default function CalendarIndex({
                                     ))}
                                 </div>
                             )}
-                            <div className="border-t p-3">
-                                <Link
-                                    href={leaves.index()}
-                                    className="flex w-full items-center justify-center gap-1 text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300"
-                                >
-                                    View all leave records{' '}
-                                    <ArrowUpRight className="size-3.5" />
-                                </Link>
-                            </div>
+                            {canViewAllBalances && (
+                                <div className="border-t p-3">
+                                    <Link
+                                        href={leaves.index()}
+                                        className="flex w-full items-center justify-center gap-1 text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300"
+                                    >
+                                        View all leave records{' '}
+                                        <ArrowUpRight className="size-3.5" />
+                                    </Link>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

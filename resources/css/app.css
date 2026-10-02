@@ -223,3 +223,15 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Drains the notification's auto-dismiss timer. Transform-based so it stays on
+   the compositor, with the per-notice duration supplied inline. */
+@keyframes notification-countdown {
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
+}

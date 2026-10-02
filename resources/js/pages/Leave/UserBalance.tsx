@@ -30,15 +30,14 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useFlashToast from '@/components/useFlashToast';
+import { usePermissions } from '@/hooks/use-permissions';
 import { filteredDateName, readFiltersFromUrl } from '@/lib/utils';
 import getEmployeeBalanceOption from '@/queries/fetchEmployeeBalance';
-import leaves from '@/routes/leaves';
-import type { EmployeeSummary, FlashMessageProp } from '@/types';
+import type { EmployeeSummary } from '@/types';
+import { Permissions } from '@/types/auth';
 
 type PageProp = {
     user: EmployeeSummary;
-    flash: { success: FlashMessageProp | null };
     filters: { month: string; year: string };
 };
 
@@ -50,7 +49,14 @@ const getInitials = (name: string) =>
         .slice(0, 2)
         .toUpperCase();
 
-export default function EmployeeBalance({ user, flash, filters }: PageProp) {
+export default function EmployeeBalance({ user, filters }: PageProp) {
+    const { can } = usePermissions();
+
+    // Recording undertime/tardiness is an HR data-entry action, not employee
+    // self-service. The route is already permission-gated, so this only keeps
+    // the form from being shown to someone who cannot submit it.
+    const canRecordUndertime = can(Permissions.RecordAdjustments);
+
     const [date, setDate] = useState(
         filters?.month && filters?.year
             ? { month: String(filters.month), year: String(filters.year) }
@@ -110,8 +116,6 @@ export default function EmployeeBalance({ user, flash, filters }: PageProp) {
         }),
         [balances],
     );
-
-    useFlashToast(flash);
 
     return (
         <>
@@ -331,37 +335,39 @@ export default function EmployeeBalance({ user, flash, filters }: PageProp) {
                                 />
                             </CollapsibleContent>
                         </Collapsible>
-                        <Collapsible
-                            open={openUndertime}
-                            onOpenChange={setOpenUndertime}
-                            className="rounded-xl border bg-card shadow-sm"
-                        >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between p-5 text-left">
-                                <span className="flex items-center gap-3">
-                                    <span className="rounded-lg bg-amber-500/10 p-2 text-amber-600 dark:text-amber-300">
-                                        <TimerOffIcon className="size-4" />
-                                    </span>
-                                    <span>
-                                        <span className="block font-semibold">
-                                            Record undertime
+                        {canRecordUndertime && (
+                            <Collapsible
+                                open={openUndertime}
+                                onOpenChange={setOpenUndertime}
+                                className="rounded-xl border bg-card shadow-sm"
+                            >
+                                <CollapsibleTrigger className="flex w-full items-center justify-between p-5 text-left">
+                                    <span className="flex items-center gap-3">
+                                        <span className="rounded-lg bg-amber-500/10 p-2 text-amber-600 dark:text-amber-300">
+                                            <TimerOffIcon className="size-4" />
                                         </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            Log tardiness or undertime
+                                        <span>
+                                            <span className="block font-semibold">
+                                                Record undertime
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                Log tardiness or undertime
+                                            </span>
                                         </span>
                                     </span>
-                                </span>
-                                <ChevronRight
-                                    className={`size-4 text-muted-foreground transition-transform ${openUndertime ? 'rotate-90' : ''}`}
-                                />
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="border-t p-5">
-                                <UndertimeForm
-                                    key={`undertime-${date.month}-${date.year}`}
-                                    user={user}
-                                    date={date}
-                                />
-                            </CollapsibleContent>
-                        </Collapsible>
+                                    <ChevronRight
+                                        className={`size-4 text-muted-foreground transition-transform ${openUndertime ? 'rotate-90' : ''}`}
+                                    />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="border-t p-5">
+                                    <UndertimeForm
+                                        key={`undertime-${date.month}-${date.year}`}
+                                        user={user}
+                                        date={date}
+                                    />
+                                </CollapsibleContent>
+                            </Collapsible>
+                        )}
                     </TabsContent>
                 </Tabs>
             </div>
@@ -370,8 +376,5 @@ export default function EmployeeBalance({ user, flash, filters }: PageProp) {
 }
 
 EmployeeBalance.layout = {
-    breadcrumbs: [
-        { title: 'Users Filing', href: leaves.data() },
-        { title: 'User Balance' },
-    ],
+    breadcrumbs: [{ title: 'My Balance' }],
 };

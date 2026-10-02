@@ -221,12 +221,13 @@ it('lists a pending request in the review queue', function () {
         ->getJson(route('leave-reviews.data'))
         ->assertOk();
 
-    $requests = $response->json('requests');
+    $requests = $response->json('requests.data');
 
     expect($requests)->toHaveCount(1)
         ->and($requests[0]['employee_id'])->toBe($employee->id)
         ->and($requests[0]['leave_type'])->toBe('vacation leave')
-        ->and($requests[0]['total_days'])->toBeGreaterThan(0);
+        ->and($requests[0]['total_days'])->toBeGreaterThan(0)
+        ->and($response->json('counts.pending'))->toBe(1);
 });
 
 it('clears the request from the queue once approved', function () {
@@ -242,5 +243,131 @@ it('clears the request from the queue once approved', function () {
     $this->actingAs($hr)
         ->getJson(route('leave-reviews.data'))
         ->assertOk()
-        ->assertJsonCount(0, 'requests');
+        ->assertJsonCount(0, 'requests.data')
+        ->assertJsonPath('counts.pending', 0)
+        // The decision moves it to the approved bucket rather than deleting it.
+        ->assertJsonPath('counts.approved', 1);
+});
+
+it('shows a decided request on the approved tab with its decision trail', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = employeeWithRecord();
+
+    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)->post(route('leave-reviews.approve', $groupId), [
+        'review_remarks' => 'Enjoy',
+    ]);
+
+    $response = $this->actingAs($hr)
+        ->getJson(route('leave-reviews.data', ['status' => 'approved']))
+        ->assertOk();
+
+    $approved = $response->json('requests.data');
+
+    expect($approved)->toHaveCount(1)
+        ->and($approved[0]['review_remarks'])->toBe('Enjoy')
+        ->and($approved[0]['reviewed_at'])->not->toBeNull()
+        ->and($approved[0]['reviewer_name'])->toBe($hr->name);
+});
+
+it('moves a rejected request out of pending and into rejected', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = employeeWithRecord();
+
+    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)->post(route('leave-reviews.reject', $groupId), [
+        'review_remarks' => 'No balance',
+    ]);
+
+    $this->actingAs($hr)
+        ->getJson(route('leave-reviews.data', ['status' => 'rejected']))
+        ->assertOk()
+        ->assertJsonCount(1, 'requests.data');
+
+    $this->actingAs($hr)
+        ->getJson(route('leave-reviews.data', ['status' => 'pending']))
+        ->assertOk()
+        ->assertJsonCount(0, 'requests.data');
+});
+
+it('falls back to pending for an unknown status filter', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = employeeWithRecord();
+
+    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+
+    $this->actingAs($hr)
+        ->getJson(route('leave-reviews.data', ['status' => 'not-a-status']))
+        ->assertOk()
+        ->assertJsonCount(1, 'requests.data');
+});
+
+it('renders the review queue page for a reviewer and hides it from everyone else', function () {
+    renderPage();
+
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = employeeWithRecord();
+
+    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+
+    $this->actingAs($hr)
+        ->get(route('leave-reviews.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leave/ReviewQueue')
+            ->has('requests.data', 1)
+            ->where('counts.pending', 1)
+            ->where('filters.status', 'pending')
+        );
+
+    // A plain employee has no ReviewLeave permission, so the page is unreachable.
+    $plain = User::factory()->create();
+
+    $this->actingAs($plain)
+        ->get(route('leave-reviews.index'))
+        ->assertForbidden();
+});
+
+it('does not let a non-HR user record an undertime adjustment', function () {
+    $plain = User::factory()->create();
+    [, $employee] = employeeWithRecord();
+
+    $this->actingAs($plain)
+        ->post(route('undertime.store'), [
+            'employee_id' => $employee->id,
+            'leave_type' => 'vacation leave',
+            'event_type' => 'deduction',
+            'event_tag' => 'tardiness',
+            'balance' => -0.5,
+            'starts_at' => '2023-03-06 08:00:00',
+            'ends_at' => '2023-03-06 09:00:00',
+        ])
+        ->assertForbidden();
+
+    expect(Leave::where('employee_id', $employee->id)->count())->toBe(0);
+});
+
+it('lets an HR user record an undertime adjustment', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = employeeWithRecord();
+
+    $this->actingAs($hr)
+        ->post(route('undertime.store'), [
+            'employee_id' => $employee->id,
+            'leave_type' => 'vacation leave',
+            'event_type' => 'deduction',
+            'event_tag' => 'tardiness',
+            'balance' => -0.5,
+            'starts_at' => '2023-03-06 08:00:00',
+            'ends_at' => '2023-03-06 09:00:00',
+        ])
+        ->assertRedirect();
+
+    expect(Leave::where('employee_id', $employee->id)->count())->toBe(1);
 });

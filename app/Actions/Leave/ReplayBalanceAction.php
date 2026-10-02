@@ -109,6 +109,14 @@ class ReplayBalanceAction
             ->whereDate('starts_at', '<', $date->copy()->startOfMonth())
             ->get(); // query all prev transactions
 
+        // Pending filings are dropped once, here, so both calculation stages see
+        // the same clean ledger. calculateBalances() re-derives force leave,
+        // wellness leave and special privilege leave from the collection it is
+        // handed, so filtering only inside replayBalances() left those three
+        // consuming days that had not been approved yet.
+        $current = self::excludePending($current);
+        $previous = self::excludePending($previous);
+
         $balances = self::replayBalances($current, $previous, $date);
 
         return self::calculateBalances($balances, $current, $date)
@@ -148,10 +156,12 @@ class ReplayBalanceAction
 
         return $users->mapWithKeys(function (Employee $user) use ($allCurrent, $allPrevious, $date, $currentEvents) {
 
-            $userCurrent = $allCurrent->get($user->id, collect());
-            $previous = $allPrevious->get($user->id, collect());
+            // Same rule as EmployeeBalance: undecided filings never reach the
+            // calculation, so the spreadsheet agrees with the on-screen balance.
+            $userCurrent = self::excludePending($allCurrent->get($user->id, collect()));
+            $previous = self::excludePending($allPrevious->get($user->id, collect()));
 
-            $userCurrentEvents = $currentEvents->get($user->id, collect());
+            $userCurrentEvents = self::excludePending($currentEvents->get($user->id, collect()));
 
 
             $balances = self::replayBalances($userCurrent, $previous, $date);

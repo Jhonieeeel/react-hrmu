@@ -8,7 +8,9 @@ import {
     FolderGit2,
     LayoutGrid,
     Plane,
+    ShieldCheck,
     User2,
+    Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -24,25 +26,34 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
-import leaves from '@/routes/leaves';
-import OCD from '../../../public/ocd_logo.svg';
+import balance from '@/routes/balance';
 import calendar from '@/routes/calendar';
-import users from '@/routes/users';
-import slip from '@/routes/slip';
 import leaveReviews from '@/routes/leave-reviews';
+import leaves from '@/routes/leaves';
+import roleRoutes from '@/routes/roles';
+import slip from '@/routes/slip';
+import users from '@/routes/users';
+import type { NavItem } from '@/types';
 import { Permissions } from '@/types/auth';
+import OCD from '../../../public/ocd_logo.svg';
 
 const mainNavItems: NavItem[] = [
+    {
+        title: 'My Balance',
+        href: balance.mine(),
+        icon: Wallet,
+    },
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+        permission: Permissions.ViewAllBalances,
     },
     {
         title: 'Leaves',
         href: leaves.index(),
         icon: Plane,
+        permission: Permissions.ViewAllBalances,
     },
     {
         title: 'Calendar',
@@ -50,7 +61,7 @@ const mainNavItems: NavItem[] = [
         icon: CalendarClock,
     },
     {
-        title: 'Leave Reviews',
+        title: 'Filed Leaves',
         href: leaveReviews.index(),
         icon: ClipboardCheck,
         permission: Permissions.ReviewLeave,
@@ -60,6 +71,12 @@ const mainNavItems: NavItem[] = [
         href: users.index(),
         icon: User2,
         permission: Permissions.ViewAllEmployees,
+    },
+    {
+        title: 'Roles & Permissions',
+        href: roleRoutes.index(),
+        icon: ShieldCheck,
+        permission: Permissions.AssignRoles,
     },
     // {
     //     title: 'Pass Slip',

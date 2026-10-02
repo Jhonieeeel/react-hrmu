@@ -24,6 +24,7 @@ class PendingReviewAction
     {
         $requests = Leave::query()
             ->pendingReview()
+            ->with('reviewer:id,name')
             ->orderBy('employee_id')
             ->orderBy('starts_at')
             ->get()
@@ -75,6 +76,94 @@ class PendingReviewAction
     }
 
     /**
+     * Requests grouped by their filing id for one status, paginated.
+     *
+     * `requests()` is deliberately unpaginated because it backs the badge count
+     * and the in-page list. This is the same data shaped for a paged table, so
+     * an HR officer can work through a large backlog without the page growing
+     * without bound.
+     *
+     * The grouping happens in PHP because the unit of review is a filing, not a
+     * ledger row — one submission can span several rows, so paginating rows
+     * would split a request across two pages.
+     */
+    public function paginate(
+        string $status = 'pending',
+        int $page = 1,
+        int $perPage = 10,
+    ): array {
+        $query = match ($status) {
+            'approved' => Leave::query()->where('event_type', 'deduction')
+                ->whereIn('event_tag', Leave::FILED_LEAVE_TAGS)
+                ->where('status', true),
+            'rejected' => Leave::query()->where('event_type', 'deduction')
+                ->whereIn('event_tag', Leave::FILED_LEAVE_TAGS)
+                ->where('status', false)
+                ->whereNotNull('reviewed_at'),
+            default => Leave::query()->pendingReview(),
+        };
+
+        $rows = $query
+            ->with('reviewer:id,name')
+            ->orderByDesc('created_at')
+            ->orderBy('employee_id')
+            ->get()
+            ->groupBy(fn (Leave $leave) => $leave->filing_group_id ?? "legacy-{$leave->id}");
+
+        $employees = Employee::query()
+            ->with(['user:id,name', 'unit:id,unit_name', 'section:id,section_name'])
+            ->whereIn('id', $rows->flatten()->pluck('employee_id')->unique())
+            ->get()
+            ->keyBy('id');
+
+        $requests = $rows
+            ->map(fn ($group) => $this->summarise($group, $employees->get($group->first()->employee_id)))
+            ->sortByDesc(fn (array $request) => $request['filed_at'] ?? '')
+            ->values();
+
+        $page = max(1, $page);
+        $total = $requests->count();
+
+        return [
+            'data' => $requests->forPage($page, $perPage)->values(),
+            'current_page' => $page,
+            'last_page' => (int) max(1, ceil($total / $perPage)),
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * How many requests sit in each bucket, for the queue's tab badges.
+     *
+     * Counts distinct filings rather than rows, so a multi-segment request
+     * inflates the other tabs by exactly the amount a reviewer cares about.
+     *
+     * @return array<string, int>
+     */
+    public function counts(): array
+    {
+        $countGroups = fn ($query) => $query
+            ->get()
+            ->groupBy(fn (Leave $leave) => $leave->filing_group_id ?? "legacy-{$leave->id}")
+            ->count();
+
+        return [
+            'pending' => $countGroups(Leave::query()->pendingReview()),
+            'approved' => $countGroups(
+                Leave::query()->where('event_type', 'deduction')
+                    ->whereIn('event_tag', Leave::FILED_LEAVE_TAGS)
+                    ->where('status', true)
+            ),
+            'rejected' => $countGroups(
+                Leave::query()->where('event_type', 'deduction')
+                    ->whereIn('event_tag', Leave::FILED_LEAVE_TAGS)
+                    ->where('status', false)
+                    ->whereNotNull('reviewed_at')
+            ),
+        ];
+    }
+
+    /**
      * @param  Collection<int, Leave>  $group
      * @return array<string, mixed>
      */
@@ -104,6 +193,12 @@ class PendingReviewAction
             // Signals that this filing predates grouping, so the UI can avoid
             // offering a bulk action that would only affect one of the rows.
             'segment_count' => $group->count(),
+            // Decision trail, shown on the approved/rejected tabs.
+            'reviewed_at' => $group->max('reviewed_at')?->toDateTimeString(),
+            'review_remarks' => $group->first(
+                fn (Leave $leave) => $leave->review_remarks !== null
+            )?->review_remarks,
+            'reviewer_name' => $group->first()->reviewer?->name,
         ];
     }
 }

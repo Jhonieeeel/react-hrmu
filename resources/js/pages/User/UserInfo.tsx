@@ -9,8 +9,6 @@ import {
     UserPlus,
     UserRound,
 } from 'lucide-react';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,7 +24,6 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { dashboard } from '@/routes';
 import leaves from '@/routes/leaves';
 import users from '@/routes/users';
-import type { FlashMessageProp } from '@/types';
 
 type Employee = {
     id: number | null;
@@ -67,9 +64,6 @@ type Props = {
     }>;
     sections: Section[];
     units: Unit[];
-    flash: {
-        success: FlashMessageProp | null;
-    };
 };
 
 export default function UserInfo({
@@ -78,7 +72,6 @@ export default function UserInfo({
     divisions,
     sections,
     units,
-    flash,
 }: Props) {
     const form = useForm({
         name: user.name,
@@ -99,12 +92,6 @@ export default function UserInfo({
             onSuccess: () => form.reset(),
         });
     }
-
-    useEffect(() => {
-        if (flash?.success) {
-            toast.success(flash.success.message, { position: 'top-center' });
-        }
-    }, [flash?.success?.id, flash?.success?.message]);
 
     const availableUnits = units.filter(
         (unit) =>

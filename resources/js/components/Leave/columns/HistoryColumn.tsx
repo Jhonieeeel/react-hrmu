@@ -1,16 +1,9 @@
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Leave } from '@/types';
-import { ColumnDef } from '@tanstack/react-table';
+import { Link, router } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { format, isSameDay } from 'date-fns';
-
+import type {
+    LucideIcon} from 'lucide-react';
 import {
     Accessibility,
     Anvil,
@@ -25,20 +18,26 @@ import {
     GraduationCap,
     HeartHandshake,
     HeartPulse,
-    LucideIcon,
     MoreHorizontal,
     Plane,
     ShieldAlert,
     Snail,
     Users,
 } from 'lucide-react';
-
-import { FilingDialog } from '../FilingDialog';
-import { EditHistoryDialog } from '../EditHistoryDialog';
-import { useState } from 'react';
-import { Link, router, useForm } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import leaves from '@/routes/leaves';
-import { useQueryClient } from '@tanstack/react-query';
+import type { Leave } from '@/types';
+
+
 
 const badgeType: Record<string, LucideIcon> = {
     'vacation leave': Plane,
@@ -101,21 +100,44 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
         accessorKey: 'balance',
         header: () => <div className="text-left">Balance</div>,
         cell: ({ row }) => {
-            const { event_type, balance } = row.original;
+            const { event_type, balance, approval_state } = row.original;
 
             const isAccrual = event_type === 'accrual';
             const sign = isAccrual ? '+' : '';
 
+            // A pending filing is listed for transparency but has not moved the
+            // balance yet, so it is dimmed and marked rather than presented as a
+            // deduction that already happened.
+            const isPending = approval_state === 'pending';
+
             return (
                 <div
                     className={
-                        isAccrual
-                            ? `gap-1 border-green-500/30 text-green-600 dark:text-green-400`
-                            : `gap-1 border-destructive/30 text-destructive`
+                        isPending
+                            ? 'text-muted-foreground gap-1'
+                            : isAccrual
+                              ? `gap-1 border-green-500/30 text-green-600 dark:text-green-400`
+                              : `gap-1 border-destructive/30 text-destructive`
                     }
                 >
                     {sign}
                     {balance}
+                    {isPending && (
+                        <Badge
+                            variant="outline"
+                            className="ml-1 border-amber-300 text-[10px] text-amber-700 dark:border-amber-800 dark:text-amber-400"
+                        >
+                            pending
+                        </Badge>
+                    )}
+                    {approval_state === 'rejected' && (
+                        <Badge
+                            variant="outline"
+                            className="ml-1 text-[10px] text-destructive"
+                        >
+                            rejected
+                        </Badge>
+                    )}
                 </div>
             );
         },
@@ -171,49 +193,54 @@ export const HistoryColumns: ColumnDef<Leave>[] = [
     },
     {
         id: 'actions',
-        cell: ({ row }) => {
-            const leave = row.original as Leave;
-
-            const queryClient = useQueryClient();
-
-            function handleDelete() {
-                router.delete(leaves.destroy({ leave: leave.id }).url, {
-                    onSuccess: () => {
-                        queryClient.invalidateQueries({
-                            queryKey: ['leaves'],
-                        });
-                    },
-                });
-            }
-
-            return (
-                <>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={leaves.edit(leave)}
-                                    target="_blank'"
-                                >
-                                    Edit
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleDelete}>
-                                Delete
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </>
-            );
-        },
+        cell: ({ row }) => <HistoryActions leave={row.original as Leave} />,
     },
 ];
+
+/**
+ * Row actions for the leave history table.
+ *
+ * Its own component rather than an inline cell function because it calls
+ * useQueryClient — a hook, which React only allows inside a component or another
+ * hook, never inside a render callback passed to the table.
+ */
+function HistoryActions({ leave }: { leave: Leave }) {
+    const queryClient = useQueryClient();
+
+    function handleDelete() {
+        router.delete(leaves.destroy({ leave: leave.id }).url, {
+            onSuccess: () => {
+                queryClient.invalidateQueries({
+                    queryKey: ['leaves'],
+                });
+            },
+        });
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem asChild>
+                    <Link href={leaves.edit(leave)} prefetch>
+                        Edit
+                    </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={handleDelete}>
+                    Delete
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}

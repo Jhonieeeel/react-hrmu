@@ -32,6 +32,11 @@ export type Leave = {
     ends_at: string;
     status: boolean;
     remarks?: string;
+    filing_group_id?: string | null;
+    /** Mirrors Leave::approvalState(). Absent on older API payloads. */
+    approval_state?: 'pending' | 'approved' | 'rejected';
+    reviewed_at?: string | null;
+    review_remarks?: string | null;
 
     employee?: {
         id: number;

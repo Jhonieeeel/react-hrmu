@@ -208,11 +208,18 @@ it('stops an employee updating their own employee record', function () {
 it('shares the effective permission list with the frontend', function () {
     renderPage();
 
+    // Any page works as a carrier for the shared props; the balance page is the
+    // one every authenticated user reaches.
     $user = employeeUser();
 
-    $this->actingAs($user)
-        ->get(route('leaves.index'))
+    $response = $this->actingAs($user)
+        ->get(route('balance.mine'))
         ->assertOk();
+
+    $permissions = $response->viewData('page')['props']['auth']['permissions'] ?? [];
+
+    expect($permissions)->toContain(Permission::ViewOwnBalance->value)
+        ->not->toContain(Permission::AssignRoles->value);
 });
 
 it('reports no baseline elevated permissions for a plain employee', function () {

@@ -19,19 +19,51 @@ use Inertia\Response;
  */
 class LeaveReviewController extends Controller
 {
-    public function index(PendingReviewAction $pending): Response
+    /**
+     * The buckets the queue can be filtered by, mirroring Leave::approvalState().
+     */
+    protected const STATUSES = ['pending', 'approved', 'rejected'];
+
+    public function index(Request $request, PendingReviewAction $pending): Response
     {
+        $status = $this->status($request);
+
         return Inertia::render('Leave/ReviewQueue', [
-            'requests' => $pending->requests(),
+            'requests' => $pending->paginate(
+                $status,
+                $request->integer('page', 1),
+                $request->integer('per_page', 10),
+            ),
+            'counts' => $pending->counts(),
+            'filters' => [
+                'status' => $status,
+            ],
         ]);
     }
 
     /**
      * JSON feed so the queue can refresh without a full page visit.
      */
-    public function data(PendingReviewAction $pending): JsonResponse
+    public function data(Request $request, PendingReviewAction $pending): JsonResponse
     {
-        return response()->json(['requests' => $pending->requests()]);
+        return response()->json([
+            'requests' => $pending->paginate(
+                $this->status($request),
+                $request->integer('page', 1),
+                $request->integer('per_page', 10),
+            ),
+            'counts' => $pending->counts(),
+        ]);
+    }
+
+    /**
+     * Constrains the requested status to one the queue knows how to build.
+     */
+    protected function status(Request $request): string
+    {
+        $status = (string) $request->input('status', 'pending');
+
+        return in_array($status, self::STATUSES, true) ? $status : 'pending';
     }
 
     public function approve(Request $request, string $filingGroup, ReviewLeaveAction $review): RedirectResponse|JsonResponse

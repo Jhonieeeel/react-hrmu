@@ -20,6 +20,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class LeaveController extends Controller
 {
@@ -40,6 +41,34 @@ class LeaveController extends Controller
     public function index()
     {
         return Inertia::render('Leave/index');
+    }
+
+    /**
+     * The caller's own balance page.
+     *
+     * Resolves the employee record from the session rather than the URL, so an
+     * employee has a stable entry point that cannot be pointed at someone else's
+     * record by editing a link.
+     */
+    public function myBalance(Request $request, LeaveBalanceService $balances): Response
+    {
+        $employee = $balances->ownEmployee();
+
+        abort_if($employee === null, 403, 'Your account is not linked to an employee record.');
+
+        $balances->authorize($employee);
+
+        return Inertia::render('Leave/UserBalance', [
+            'user' => [
+                'id' => $employee->id,
+                'name' => $employee->user?->name ?? 'Unknown employee',
+                'employee_type' => $employee->user?->employee_type,
+            ],
+            'filters' => [
+                'month' => $request->input('month'),
+                'year' => $request->input('year'),
+            ],
+        ]);
     }
 
     public function initialAccrual(InitialAccrualDTO $initialAccrualDTO, MonthlyAccrualAction $action)
@@ -64,9 +93,14 @@ class LeaveController extends Controller
         $weekdays = $checkDateRangeAction->checkDateRange($leaveData);
 
         if ($weekdays === []) {
-            return back()->withErrors([
-                'date_range' => 'The selected range contains no working days.',
-            ]);
+            // Raised both as a validation error (shown next to the form) and on
+            // the error flash channel (shown as a notification), so a submit
+            // that does nothing is never silent.
+            return back()
+                ->withErrors([
+                    'date_range' => 'The selected range contains no working days.',
+                ])
+                ->with('error', 'The selected range contains no working days.');
         }
 
         $action->createLeaves($weekdays, $leaveData);

@@ -5,7 +5,6 @@ import { useState } from 'react';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useFlashToast from '@/components/useFlashToast';
 import AddUserBalance from '@/components/User/AddUserBalance';
 import { UserColumns } from '@/components/User/columns/UserColumns';
 import CreateUserForm from '@/components/User/CreateUserForm';
@@ -13,7 +12,7 @@ import OrganizationManager from '@/components/User/OrganizationManager';
 import UserMonthlyFilingForm from '@/components/User/UserMonthlyFilingForm';
 import getUsers from '@/queries/fetchUsers';
 import users from '@/routes/users';
-import type { EmployeeSummary, FlashMessageProp } from '@/types';
+import type { EmployeeSummary } from '@/types';
 
 type PageProp = {
     users_data: EmployeeSummary[];
@@ -34,9 +33,6 @@ type PageProp = {
         unit_name: string;
         unit_code: string;
     }>;
-    flash: {
-        success: FlashMessageProp | null;
-    };
 };
 
 export default function User({
@@ -44,7 +40,6 @@ export default function User({
     divisions,
     sections,
     units,
-    flash,
 }: PageProp) {
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({
@@ -54,8 +49,6 @@ export default function User({
     });
 
     const { data: users, isFetching } = useQuery(getUsers(page, filters));
-
-    useFlashToast(flash);
 
     return (
         <>

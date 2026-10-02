@@ -1,18 +1,16 @@
+import { Head, useRemember } from '@inertiajs/react';
+import { useQuery } from '@tanstack/react-query';
+import { Calendar } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { FilingColumns } from '@/components/Leave/columns/FilingColumns';
 import DownloadButton from '@/components/Leave/ExportButton';
 import FilterButton from '@/components/Leave/FilterButton';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import { DataTable } from '@/components/Leave/table/DataTable';
-import useFlashToast from '@/components/useFlashToast';
 import { filteredDateName } from '@/lib/utils';
 import getFilingOption from '@/queries/fetchMonthlyFiling';
 import { dashboard } from '@/routes';
-import { FlashMessageProp } from '@/types';
-import { Head, useRemember } from '@inertiajs/react';
-import { useQuery } from '@tanstack/react-query';
-import { Calendar } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import type { FlashMessageProp } from '@/types';
 
 type PageProp = {
     flash: {
@@ -52,7 +50,6 @@ export default function Leaves({ flash }: PageProp) {
         [date.month, date.year],
     );
 
-    useFlashToast(flash);
 
     return (
         <>

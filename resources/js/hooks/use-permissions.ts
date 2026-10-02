@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
-import { Permissions, Roles, type Permission, type Role } from '@/types/auth';
+import { Permissions, Roles   } from '@/types/auth';
+import type {Permission, Role} from '@/types/auth';
 
 /**
  * Client-side view of the permissions the server shares on every page.
@@ -10,7 +11,7 @@ import { Permissions, Roles, type Permission, type Role } from '@/types/auth';
  */
 export function usePermissions() {
     const auth = usePage().props.auth as
-        | { permissions: string[]; roles: string[] }
+        | { user?: { id?: number }; permissions: string[]; roles: string[] }
         | undefined;
 
     const permissions = auth?.permissions ?? [];
@@ -19,6 +20,7 @@ export function usePermissions() {
     return {
         permissions,
         roles,
+        currentUserId: auth?.user?.id ?? null,
         can: (permission: Permission | string) => permissions.includes(permission),
         hasRole: (role: Role | string) => roles.includes(role),
         isSuperAdmin: roles.includes(Roles.SuperAdmin),
