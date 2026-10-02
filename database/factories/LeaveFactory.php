@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Employee;
 use App\Models\Leave;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Leave>
@@ -62,7 +63,7 @@ class LeaveFactory extends Factory
      */
     public function accrual(string $leaveType, float $balance, ?string $startsAt = null, ?string $endsAt = null): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'leave_type' => $leaveType,
             'event_type' => 'accrual',
             'event_tag' => 'accrual',
@@ -80,13 +81,64 @@ class LeaveFactory extends Factory
      */
     public function deduction(string $leaveType, string $eventTag, float $balance, string $startsAt, ?string $endsAt = null): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'leave_type' => $leaveType,
             'event_type' => 'deduction',
             'event_tag' => $eventTag,
             'balance' => -abs($balance),
             'starts_at' => $startsAt,
             'ends_at' => $endsAt ?? $startsAt,
+            // Seeded history predates the approval workflow, so deductions
+            // recorded by HR are treated as already approved. See also the
+            // migration that backfills pre-existing rows.
+            'status' => true,
+        ]);
+    }
+
+    /**
+     * A leave request submitted by an employee and awaiting a decision.
+     *
+     * $days is stored as a negative balance, matching CreateLeaveAction.
+     */
+    public function filed(string $leaveType, float $days, string $startsAt, ?string $endsAt = null, ?string $groupId = null): static
+    {
+        return $this->state(fn () => [
+            'leave_type' => $leaveType,
+            'event_type' => 'deduction',
+            'event_tag' => 'leave',
+            'filing_group_id' => $groupId ?? (string) Str::uuid(),
+            'balance' => -abs($days),
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt ?? $startsAt,
+            'status' => false,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+        ]);
+    }
+
+    /**
+     * Mark a filed request as approved by the given reviewer.
+     */
+    public function approved(?int $reviewerId = null, ?string $remarks = null): static
+    {
+        return $this->state(fn () => [
+            'status' => true,
+            'reviewed_by' => $reviewerId,
+            'reviewed_at' => now(),
+            'review_remarks' => $remarks,
+        ]);
+    }
+
+    /**
+     * Mark a filed request as rejected.
+     */
+    public function rejected(?int $reviewerId = null, ?string $remarks = null): static
+    {
+        return $this->state(fn () => [
+            'status' => false,
+            'reviewed_by' => $reviewerId,
+            'reviewed_at' => now(),
+            'review_remarks' => $remarks,
         ]);
     }
 
@@ -95,7 +147,7 @@ class LeaveFactory extends Factory
      */
     public function monthlyFilingPlaceholder(?string $startsAt = null, ?string $endsAt = null): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
             'event_tag' => 'filing',
@@ -108,7 +160,7 @@ class LeaveFactory extends Factory
 
     public function monthlyFilingSeeder(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
             'event_tag' => 'filing',
@@ -124,7 +176,7 @@ class LeaveFactory extends Factory
      */
     public function monthlyFiling(string $startsAt, string $endsAt, ?string $remarks = null, bool $completed = true): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'leave_type' => 'monthly filing',
             'event_type' => 'filing',
             'event_tag' => 'filing',

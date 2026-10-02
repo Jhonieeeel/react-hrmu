@@ -24,16 +24,23 @@ class UnitFactory extends Factory
         ];
     }
 
+    /**
+     * Unique codes come from a sequence rather than Faker's `unique()` pool.
+     * `unique()->lexify('U###')` only has 9000 combinations, which a test that
+     * creates many employees can exhaust.
+     */
     public function definition(): array
     {
+        static $sequence = 0;
+
         return [
-            'unit_name' => fake()->unique()->words(3, true),
-            'unit_code' => strtoupper(fake()->unique()->lexify('U###')),
+            'unit_name' => fake()->words(3, true).' '.($sequence + 1),
+            'unit_code' => 'U'.str_pad((string) $sequence++, 4, '0', STR_PAD_LEFT),
         ];
     }
 
     public function forSection(Section $section): static
     {
-        return $this->state(fn() => ['section_id' => $section->id]);
+        return $this->state(fn () => ['section_id' => $section->id]);
     }
 }

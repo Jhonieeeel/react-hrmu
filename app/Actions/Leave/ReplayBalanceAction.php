@@ -257,6 +257,20 @@ class ReplayBalanceAction
     }
 
 
+    /**
+     * Drop leave filings that are still awaiting a decision.
+     *
+     * Only rows that actually require approval can be pending — accruals, monthly
+     * filings and HR-recorded deductions (tardiness, undertime, absent) are
+     * approved from the moment they are written, so they always stay in.
+     */
+    protected static function excludePending(Collection $leaves): Collection
+    {
+        return $leaves->reject(
+            fn (Leave $leave) => $leave->requiresApproval() && ! $leave->isApproved()
+        );
+    }
+
     protected static function minutesToDayEquivalent(int $totalMinutes): float
     {
         if ($totalMinutes <= 0) {
@@ -312,6 +326,13 @@ class ReplayBalanceAction
             'wellness leave',
             'special privilege leave'
         ];
+
+        // Pending filings are held out of the balance entirely: they are not yet
+        // approved, so they neither add to nor subtract from what the employee
+        // can actually spend. Their total is reported separately by
+        // PendingReviewAction so the UI can surface it.
+        $current = self::excludePending($current);
+        $previous = self::excludePending($previous);
 
         $currentYear = $current->filter(
             fn($item) => Carbon::parse($item->starts_at)->year === $date->year

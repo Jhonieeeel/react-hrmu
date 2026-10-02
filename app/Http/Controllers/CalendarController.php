@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use App\Actions\Calendar\CalendarTransactionsAction;
 use App\Actions\Leave\CheckDateRangeAction;
 use App\Actions\Leave\CreateLeaveAction;
@@ -11,7 +9,9 @@ use App\Data\LeaveDTO;
 use App\Models\Employee;
 use App\Models\Holiday;
 use App\Models\Leave;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class CalendarController extends Controller
 {
@@ -40,15 +40,21 @@ class CalendarController extends Controller
 
     public function store(LeaveDTO $leaveData, CreateLeaveAction $action, CheckDateRangeAction $checkDateRangeAction)
     {
+        // Entries created from the calendar are recorded by HR, so they are
+        // approved on creation rather than entering the review queue.
+        $this->authorize('adjust', Employee::query()->findOrFail($leaveData->employee_id));
+
         $weekdays = $checkDateRangeAction->checkDateRange($leaveData);
 
-        $action->createLeaves($weekdays, $leaveData);
+        $action->createLeaves($weekdays, $leaveData, requiresApproval: false);
 
         return to_route('calendar.index')->with('success', 'Calendar Leave Added');
     }
 
     public function update(Request $request, Leave $leave)
     {
+        $this->authorize('update', $leave);
+
         $validated = $request->validate([
             'employee_id' => ['sometimes', 'integer', 'exists:employees,id'],
             'leave_type' => ['sometimes', 'string', 'max:255'],
@@ -70,6 +76,8 @@ class CalendarController extends Controller
 
     public function destroy(Leave $leave)
     {
+        $this->authorize('delete', $leave);
+
         $leave->delete();
 
         return back()->with('success', [

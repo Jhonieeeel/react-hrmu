@@ -23,9 +23,13 @@ class SectionFactory extends Factory
 
     public function definition(): array
     {
+        // Sequence-based codes: `unique()->lexify('S###')` has only 9000
+        // combinations and runs out when a test creates many sections.
+        static $sequence = 0;
+
         return [
-            'section_name' => fake()->unique()->words(3, true),
-            'section_code' => strtoupper(fake()->unique()->lexify('S###')),
+            'section_name' => fake()->words(3, true).' '.($sequence + 1),
+            'section_code' => 'S'.str_pad((string) $sequence++, 4, '0', STR_PAD_LEFT),
         ];
     }
 }

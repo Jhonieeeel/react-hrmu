@@ -74,6 +74,20 @@ export default function EmployeeBalance({ user, flash, filters }: PageProp) {
         [userData?.balances],
     );
     const transactions = userData?.transactions;
+    // Leave filed but not yet approved. Held out of `balances` server-side, so
+    // this is purely informational.
+    const pending = useMemo<Record<string, number>>(
+        () => (userData?.pending as Record<string, number>) ?? {},
+        [userData?.pending],
+    );
+    const pendingTotal = useMemo(
+        () =>
+            Object.values(pending).reduce(
+                (total: number, days: number) => total + Number(days),
+                0,
+            ),
+        [pending],
+    );
     const needsInitialAccrual = ['new employee', 'transferee'].includes(
         user.employee_type ?? '',
     );
@@ -224,6 +238,33 @@ export default function EmployeeBalance({ user, flash, filters }: PageProp) {
                                 days
                             </Badge>
                         </div>
+
+                        {pendingTotal > 0 && (
+                            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/40">
+                                <Clock3 className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                <div>
+                                    <p className="font-medium">
+                                        {pendingTotal.toFixed(3)} day
+                                        {pendingTotal === 1 ? '' : 's'} awaiting
+                                        approval
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                        Not deducted from the balances above
+                                        until a reviewer approves the request.
+                                    </p>
+                                    <ul className="mt-1 text-muted-foreground">
+                                        {Object.entries(pending).map(
+                                            ([type, days]) => (
+                                                <li key={type}>
+                                                    {type}: {Number(days).toFixed(3)}{' '}
+                                                    days
+                                                </li>
+                                            ),
+                                        )}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {balances.map((balance: Balance) => (
                                 <BalanceCard

@@ -26,6 +26,8 @@ class HolidayController extends Controller
 
     public function destroy(Holiday $holiday)
     {
+        $this->authorize('delete', $holiday);
+
         $holiday->delete();
 
         return back()->with('success', [

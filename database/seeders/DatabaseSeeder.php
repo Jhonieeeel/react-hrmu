@@ -19,6 +19,12 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        // Roles and permissions must exist before any user is assigned one.
+        $this->call([
+            RolePermissionSeeder::class,
+            SuperAdminSeeder::class,
+        ]);
+
         $this->call(SectionSeeder::class);
 
         $assignments = [
@@ -44,6 +50,8 @@ class DatabaseSeeder extends Seeder
             'angelicmae@ocd.com' => ['section' => 'AFMS', 'unit' => 'RMU'],
         ];
 
+        // Left with no role on purpose: this is the plain-employee baseline that
+        // the Gate::before hook in AppServiceProvider grants self-service to.
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

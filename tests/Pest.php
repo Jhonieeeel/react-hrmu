@@ -1,6 +1,11 @@
 <?php
 
+use App\Enums\Role;
+use App\Models\Employee;
+use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /*
@@ -17,6 +22,17 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+/**
+ * Renders Inertia responses without needing a built Vite manifest.
+ *
+ * Called explicitly by the tests that assert a full page renders, so the rest of
+ * the suite stays unaffected.
+ */
+function renderPage(): void
+{
+    test()->withoutVite();
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -47,4 +63,66 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/*
+|--------------------------------------------------------------------------
+| Authorization helpers
+|--------------------------------------------------------------------------
+|
+| Role and permission tests need real spatie rows to exist, because the gate
+| resolves permissions from the database rather than from anything on the model.
+| These helpers seed only the minimum, and reuse it across a test run.
+|
+*/
+
+function seedRolesAndPermissions(): void
+{
+    if (app(PermissionRegistrar::class)
+        ->getPermissions()
+        ->isNotEmpty()) {
+        return;
+    }
+
+    test()->seed(RolePermissionSeeder::class);
+}
+
+/**
+ * A plain employee: no roles at all, only the implicit baseline permissions.
+ */
+function employeeUser(): User
+{
+    seedRolesAndPermissions();
+
+    $user = User::factory()->create();
+
+    $employee = Employee::factory()->create(['user_id' => $user->id]);
+
+    $user->setRelation('employees', collect([$employee]));
+
+    return $user;
+}
+
+/**
+ * A user holding the given role name.
+ */
+function userWithRole(string $role, ?Employee $employee = null): User
+{
+    seedRolesAndPermissions();
+
+    $user = User::factory()->create();
+
+    if ($employee) {
+        $employee->update(['user_id' => $user->id]);
+        $user->setRelation('employees', collect([$employee]));
+    }
+
+    $user->assignRole($role);
+
+    return $user;
+}
+
+function superAdmin(): User
+{
+    return userWithRole(Role::SuperAdmin->value);
 }

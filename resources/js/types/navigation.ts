@@ -11,4 +11,9 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /**
+     * Permission required to see this item. The server enforces the same rule;
+     * this only keeps the sidebar honest.
+     */
+    permission?: string;
 };

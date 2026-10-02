@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PassSlip extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
         'user_id',
         'position',
         'usd',
@@ -20,11 +20,13 @@ class PassSlip extends Model
         'assigned_to',
     ];
 
-    public function user(): BelongsTo {
+    public function user(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function assignedToUser(): BelongsTo {
+    public function assignedToUser(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'assigned_to');
     }
 }

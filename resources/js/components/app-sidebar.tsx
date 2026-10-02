@@ -3,6 +3,7 @@ import {
     BookOpen,
     Calendar,
     CalendarClock,
+    ClipboardCheck,
     FileTextIcon,
     FolderGit2,
     LayoutGrid,
@@ -29,6 +30,8 @@ import OCD from '../../../public/ocd_logo.svg';
 import calendar from '@/routes/calendar';
 import users from '@/routes/users';
 import slip from '@/routes/slip';
+import leaveReviews from '@/routes/leave-reviews';
+import { Permissions } from '@/types/auth';
 
 const mainNavItems: NavItem[] = [
     {
@@ -47,9 +50,16 @@ const mainNavItems: NavItem[] = [
         icon: CalendarClock,
     },
     {
+        title: 'Leave Reviews',
+        href: leaveReviews.index(),
+        icon: ClipboardCheck,
+        permission: Permissions.ReviewLeave,
+    },
+    {
         title: 'Employees',
         href: users.index(),
         icon: User2,
+        permission: Permissions.ViewAllEmployees,
     },
     // {
     //     title: 'Pass Slip',
