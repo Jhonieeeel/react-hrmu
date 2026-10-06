@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { CheckCircle2, ClipboardCheck, Plane, XCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -64,6 +65,23 @@ type Props = {
     filters: { status: string };
 };
 
+/**
+ * Only these three props change between tab switches, pages and decisions; the
+ * rest of the page (auth user, shared nav data, flash) is identical every time.
+ *
+ * Passed to Inertia's `only`, which makes the visit a partial reload: the server
+ * returns just the queue instead of re-sending the whole page payload on every
+ * click.
+ */
+const QUEUE_PROPS = ['requests', 'counts', 'filters'];
+
+/**
+ * A decision also flashes "Approved …" / "Rejected …", and `flash` is a shared
+ * prop — so it has to be named explicitly or the partial reload would leave it
+ * out and the notification would silently disappear.
+ */
+const DECISION_PROPS = [...QUEUE_PROPS, 'flash'];
+
 const STATUS_TABS = [
     { value: 'pending', label: 'Pending' },
     { value: 'approved', label: 'Approved' },
@@ -82,6 +100,7 @@ function formatRange(range: Range) {
 export default function ReviewQueue({ requests, counts, filters }: Props) {
     const { can } = usePermissions();
     const canReview = can(Permissions.ReviewLeave);
+    const queryClient = useQueryClient();
 
     const [notes, setNotes] = useState<Record<string, string>>({});
     const [processing, setProcessing] = useState<string | null>(null);
@@ -113,16 +132,32 @@ export default function ReviewQueue({ requests, counts, filters }: Props) {
             url,
             { review_remarks: note || null },
             {
+                // Same reason as the tab/pagination visits: the notes in the
+                // other rows are still being typed and must survive the round
+                // trip. This row's own note is cleared in onSuccess below.
+                preserveState: true,
                 preserveScroll: true,
+                only: DECISION_PROPS,
                 // The queue is re-rendered from props, so the local note for this
                 // row is no longer meaningful once the decision lands.
-                onSuccess: () =>
+                onSuccess: () => {
                     setNotes((prev) => {
                         const next = { ...prev };
                         delete next[groupId];
 
                         return next;
-                    }),
+                    });
+
+                    // A decision changes approved leave from "pending" to
+                    // "deducted", so every React Query cache built on leave rows
+                    // is now stale in this browser: the filing list, the
+                    // employee's balance, and the calendar. Same pattern as
+                    // FilingDialog / RoleManager.
+                    queryClient.invalidateQueries({ queryKey: ['leaves'] });
+                    queryClient.invalidateQueries({
+                        queryKey: ['calendarEvents'],
+                    });
+                },
                 onFinish: () => setProcessing(null),
             },
         );
@@ -131,15 +166,34 @@ export default function ReviewQueue({ requests, counts, filters }: Props) {
     const goToPage = (page: number) => {
         router.get(
             leaveReviews.index({ query: { status, page } }).url,
-            { preserveScroll: true, replace: true },
+            {
+                // Keep this page instance (and so the typed review notes in
+                // `notes`) across the visit. Without it Inertia discards the
+                // component and any half-written notes are lost.
+                preserveState: true,
+                preserveScroll: true,
+                only: QUEUE_PROPS,
+                replace: true,
+            },
         );
     };
 
     const switchStatus = (next: string) => {
+        if (next === status) {
+            return;
+        }
+
         setError(null);
         router.get(
             leaveReviews.index({ query: { status: next, page: 1 } }).url,
-            { preserveScroll: true },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: QUEUE_PROPS,
+                // Don't stack a history entry per tab click — the browser back
+                // button should leave the queue, not walk tabs in reverse.
+                replace: true,
+            },
         );
     };
 

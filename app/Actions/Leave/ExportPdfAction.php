@@ -25,7 +25,6 @@ class ExportPdfAction
             $leaves   = $replay['leaves'];
             $date = Carbon::parse($replay['date']);
 
-
             $activeSheet->setCellValue("A2", "As of {$date?->format('F Y')}");
 
             // name
@@ -72,8 +71,6 @@ class ExportPdfAction
                 $allLeaves[] = $leave["label"];
             }
             $activeSheet->setCellValue("J$cellStart", implode("\n", $allLeaves));
-
-
 
 
             $activeSheet->setCellValue("K$cellStart", $replay['tardinessCount'] <= 0 ? '' : $replay['tardinessCount']);

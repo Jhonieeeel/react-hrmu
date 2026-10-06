@@ -47,6 +47,10 @@ class HandleInertiaRequests extends Middleware
                 // so the UI can hide what the server would refuse anyway.
                 'permissions' => $user?->effectivePermissions() ?? [],
                 'roles' => $user?->roleNames() ?? [],
+                // The personnel record behind this login. Shared so self-service
+                // screens (e.g. the calendar's file-leave dialog) can lock the
+                // employee field to the caller instead of offering the roster.
+                'employee_id' => $user?->employee()?->id,
             ],
             'flash' => [
                 'downloadUrl' => fn () => session('downloadUrl'),

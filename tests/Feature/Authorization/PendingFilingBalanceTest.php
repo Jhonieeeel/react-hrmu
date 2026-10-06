@@ -197,3 +197,35 @@ it('shows the filing in the export once it is approved', function () {
     expect((float) $forceLeave['current'])->toBe(8.0)
         ->and($export[$employee->id]['leaves'])->toHaveCount(1);
 });
+
+it('carries the employee position into the export row', function () {
+    $employee = Employee::factory()->create(['position' => 'Payroll Officer']);
+    $employee->load('user');
+
+    $date = Carbon\Carbon::create(2023, 3, 1);
+
+    $export = ReplayBalanceAction::EmployeesBalances($date, collect([$employee]));
+
+    // `position` is a column on employees. It was previously read as
+    // $user->employees?->position, which is a User-side relation and so always
+    // resolved to null — the PDF has been rendering a blank title this way.
+    expect($export[$employee->id]['position'])->toBe('Payroll Officer');
+});
+
+it('reads position even when the caller selected columns explicitly', function () {
+    $employee = Employee::factory()->create(['position' => 'HR Assistant']);
+
+    // Mirrors LeaveController::export, which narrows the select to avoid
+    // pulling every employees column into the report.
+    $selected = Employee::query()
+        ->with('user:id,name')
+        ->get(['id', 'user_id', 'position'])
+        ->first();
+
+    expect($selected->position)->toBe('HR Assistant');
+
+    $date = Carbon\Carbon::create(2023, 3, 1);
+    $export = ReplayBalanceAction::EmployeesBalances($date, collect([$selected]));
+
+    expect($export[$selected->id]['position'])->toBe('HR Assistant');
+});

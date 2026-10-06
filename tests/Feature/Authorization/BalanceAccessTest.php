@@ -67,6 +67,36 @@ it('lets a super admin open any employee balance', function () {
         ->assertOk();
 });
 
+/*
+ * The balance page is self-service reachable, so the frontend has to decide
+ * whether to draw the accrual controls. These pin the permission that decision
+ * is based on — if the server-side gate ever moves, this is the canary.
+ */
+
+it('does not advertise the accrual control to a plain employee', function () {
+    [$user] = caller();
+
+    $permissions = $this->actingAs($user)
+        ->get(route('leaves.show', $user->employee()->id))
+        ->assertOk()
+        ->viewData('page')['props']['auth']['permissions'];
+
+    // UserBalance gates AccrualButton/AccrualDialog on this.
+    expect($permissions)->not->toContain(Permission::ManageAccruals->value);
+});
+
+it('advertises the accrual control to hr', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = caller();
+
+    $permissions = $this->actingAs($hr)
+        ->get(route('leaves.show', $employee))
+        ->assertOk()
+        ->viewData('page')['props']['auth']['permissions'];
+
+    expect($permissions)->toContain(Permission::ManageAccruals->value);
+});
+
 it('stops an employee reaching the employee directory json feed', function () {
     $user = employeeUser();
 
@@ -106,6 +136,52 @@ it('stops an employee adding an accrual to themselves', function () {
     $this->actingAs($user)
         ->post(route('leaves.accrual', $user->id), $payload)
         ->assertForbidden();
+});
+
+/*
+ * The accrual button posts the *upcoming* month (AccrualButton derives it with
+ * addMonth) and the controller redirects back to the balance page carrying that
+ * month. UserBalance follows those filters to re-point its own filter state, so
+ * the user does not re-pick the period they just accrued for. This pins the
+ * server half of that contract.
+ */
+it('redirects to the balance page already advanced to the accrued month', function () {
+    renderPage();
+
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = caller();
+
+    $response = $this->actingAs($hr)->post(route('leaves.accrual', $employee->id), [
+        'employee_id' => $employee->id,
+        'leave_type' => 'vacation leave',
+        'event_type' => 'accrual',
+        'event_tag' => 'accrual',
+        'balance' => 1.25,
+        'starts_at' => '2026-11-01',
+        'ends_at' => '2026-11-30',
+    ]);
+
+    $response->assertRedirect(route('leaves.show', [
+        'employee' => $employee->id,
+        'month' => 11,
+        'year' => 2026,
+    ]));
+
+    // And that redirect really does hand the new period to the page as props.
+    // Note these arrive as strings — they come off the query string — which is
+    // why the page normalises with String() before comparing periods.
+    $this->actingAs($hr)
+        ->get(route('leaves.show', [
+            'employee' => $employee->id,
+            'month' => 11,
+            'year' => 2026,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Leave/UserBalance')
+            ->where('filters.month', '11')
+            ->where('filters.year', '2026')
+        );
 });
 
 it('stops an employee adding a balance adjustment to themselves', function () {

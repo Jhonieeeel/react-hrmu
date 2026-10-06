@@ -128,8 +128,6 @@ class LeaveController extends Controller
             abort(403, 'Your account is not linked to an employee record.');
         }
 
-        // Silently redirect to the caller's own record so a crafted request
-        // cannot file leave on someone else's behalf.
         return $own;
     }
 
@@ -254,7 +252,9 @@ class LeaveController extends Controller
         $date = Carbon::create($year, $month, 1);
         $employees = Employee::query()
             ->with('user:id,name')
-            ->get(['id', 'user_id']);
+            // position has to be selected explicitly here: ReplayBalanceAction
+            // reads it off each Employee to populate the export.
+            ->get(['id', 'user_id', 'position']);
 
         $usersBalance = $balanceAction->EmployeesBalances($date, $employees);
         $exportUrl = $export->exportPdf($usersBalance);

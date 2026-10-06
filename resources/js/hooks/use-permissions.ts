@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
-import { Permissions, Roles   } from '@/types/auth';
-import type {Permission, Role} from '@/types/auth';
+import { Permissions, Roles } from '@/types/auth';
+import type { Permission, Role } from '@/types/auth';
 
 /**
  * Client-side view of the permissions the server shares on every page.
@@ -11,7 +11,12 @@ import type {Permission, Role} from '@/types/auth';
  */
 export function usePermissions() {
     const auth = usePage().props.auth as
-        | { user?: { id?: number }; permissions: string[]; roles: string[] }
+        | {
+              user?: { id?: number; name?: string };
+              permissions: string[];
+              roles: string[];
+              employee_id?: number | null;
+          }
         | undefined;
 
     const permissions = auth?.permissions ?? [];
@@ -21,10 +26,24 @@ export function usePermissions() {
         permissions,
         roles,
         currentUserId: auth?.user?.id ?? null,
-        can: (permission: Permission | string) => permissions.includes(permission),
+        currentUserName: auth?.user?.name ?? null,
+        /**
+         * The caller's own personnel record id. Leave filing is keyed by
+         * employees.id, not users.id, so self-service forms need this to
+         * submit against themselves.
+         */
+        currentEmployeeId: auth?.employee_id ?? null,
+        can: (permission: Permission | string) =>
+            permissions.includes(permission),
         hasRole: (role: Role | string) => roles.includes(role),
         isSuperAdmin: roles.includes(Roles.SuperAdmin),
         canReviewLeave: permissions.includes(Permissions.ReviewLeave),
         canManageEmployees: permissions.includes(Permissions.ViewAllEmployees),
+        /**
+         * Whether the caller may file leave against someone other than
+         * themselves. Mirrors LeaveController::resolveEmployee, which only
+         * honours a submitted employee_id for holders of ViewAllBalances.
+         */
+        canFileForOthers: permissions.includes(Permissions.ViewAllBalances),
     };
 }

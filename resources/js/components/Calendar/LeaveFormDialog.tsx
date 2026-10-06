@@ -1,3 +1,6 @@
+import { useForm } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { isBefore, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -8,15 +11,14 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { Leave, User } from '@/types';
-import { useForm } from '@inertiajs/react';
-import { isBefore, parseISO } from 'date-fns';
+import { usePermissions } from '@/hooks/use-permissions';
+import leaves from '@/routes/leaves';
+import type { User } from '@/types';
 import { event_types } from '../Leave/constants/constants';
 import DatePicker from '../Leave/DatePicker';
 import SelectCombobox from '../Leave/SelectCombobox';
-import leaves from '@/routes/leaves';
-import { useQueryClient } from '@tanstack/react-query';
 
 type DialogFormProps = {
     open: boolean;
@@ -31,8 +33,13 @@ export default function LeaveFormDialog({
     date,
     users,
 }: DialogFormProps) {
+    const { canFileForOthers, currentEmployeeId, currentUserName } =
+        usePermissions();
+
     const form = useForm({
-        employee_id: 0,
+        // Self-service callers are locked to their own personnel record. HR gets
+        // the picker and starts at 0 (nothing chosen yet).
+        employee_id: canFileForOthers ? 0 : (currentEmployeeId ?? 0),
         leave_type: '',
         event_type: 'deduction',
         event_tag: 'leave',
@@ -46,11 +53,18 @@ export default function LeaveFormDialog({
     function handleSubmit(e: React.SubmitEvent) {
         e.preventDefault();
 
+        if (!form.data.employee_id) {
+            form.setError('employee_id', 'Select an employee');
+
+            return;
+        }
+
         const startDate = parseISO(form.data.starts_at);
         const endDate = parseISO(form.data.ends_at);
 
         if (isBefore(endDate, startDate)) {
             form.setError('ends_at', 'End date cannot be before start date');
+
             return;
         }
 
@@ -79,8 +93,9 @@ export default function LeaveFormDialog({
                     <DialogHeader className="mb-2">
                         <DialogTitle>File Leave</DialogTitle>
                         <DialogDescription>
-                            Make changes to your profile here. Click save when
-                            you&apos;re done.
+                            {canFileForOthers
+                                ? 'Record a leave for any employee. Click submit when you are done.'
+                                : 'Submit your own leave request. It will go to HR for approval.'}
                         </DialogDescription>
                     </DialogHeader>
                     <FieldGroup>
@@ -88,17 +103,35 @@ export default function LeaveFormDialog({
                             <FieldLabel htmlFor="employee_id">
                                 Employee Name
                             </FieldLabel>
-                            <SelectCombobox
-                                items={users.map((u) => ({
-                                    value: u.id,
-                                    label: u.name,
-                                }))}
-                                value={form.data.employee_id}
-                                onValueChange={(value: string) =>
-                                    form.setData('employee_id', Number(value))
-                                }
-                                placeholder="Select an employee"
-                            />
+                            {canFileForOthers ? (
+                                <SelectCombobox
+                                    items={users.map((u) => ({
+                                        value: u.id,
+                                        label: u.name,
+                                    }))}
+                                    value={form.data.employee_id}
+                                    onValueChange={(value: string) =>
+                                        form.setData(
+                                            'employee_id',
+                                            Number(value),
+                                        )
+                                    }
+                                    placeholder="Select an employee"
+                                />
+                            ) : (
+                                // Non-HR callers never choose an employee: the
+                                // server resolves the submitter to their own
+                                // record regardless (LeaveController::resolveEmployee).
+                                <Input
+                                    id="employee_id"
+                                    value={currentUserName ?? 'Yourself'}
+                                    disabled
+                                    className="font-semibold"
+                                />
+                            )}
+                            <small className="text-xxs text-red-600 dark:text-red-300">
+                                {form.errors.employee_id}
+                            </small>
                         </Field>
                         <Field>
                             <FieldLabel htmlFor="leave_type">
@@ -112,14 +145,16 @@ export default function LeaveFormDialog({
                                 value={form.data.leave_type}
                                 onValueChange={(value: string) => {
                                     form.setData('leave_type', value);
+
                                     if (
                                         String(value).toLowerCase() ===
                                         'force leave'
-                                    )
+                                    ) {
                                         form.setData(
                                             'event_tag',
                                             'vacation leave',
                                         );
+                                    }
                                 }}
                                 placeholder="Select leave type"
                             />

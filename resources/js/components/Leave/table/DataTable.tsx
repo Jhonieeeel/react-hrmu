@@ -45,7 +45,11 @@ export function DataTable<TData, TValue>({
                             {headerGroup.headers.map((header) => (
                                 <TableHead
                                     key={header.id}
-                                    className="h-12 px-4 text-xs font-semibold tracking-wider text-primary-foreground uppercase"
+                                    // py-3 (not just h-12) so the label is
+                                    // genuinely centred with breathing room:
+                                    // h-12 alone left the uppercase text
+                                    // sitting flush against the top edge.
+                                    className="h-12 px-4 py-3 text-xs font-semibold tracking-wider text-primary-foreground uppercase"
                                 >
                                     {header.isPlaceholder
                                         ? null

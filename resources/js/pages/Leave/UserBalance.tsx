@@ -57,6 +57,11 @@ export default function EmployeeBalance({ user, filters }: PageProp) {
     // the form from being shown to someone who cannot submit it.
     const canRecordUndertime = can(Permissions.RecordAdjustments);
 
+    // Post-accrual and initial-accrual are both behind `permission:manage
+    // accruals`. This page is reachable by any authenticated user, so without
+    // this every employee saw an Accrual button that only ever 403'd.
+    const canManageAccruals = can(Permissions.ManageAccruals);
+
     const [date, setDate] = useState(
         filters?.month && filters?.year
             ? { month: String(filters.month), year: String(filters.year) }
@@ -65,6 +70,31 @@ export default function EmployeeBalance({ user, filters }: PageProp) {
     const [page, setPage] = useState(1);
     const [openLeave, setOpenLeave] = useState(false);
     const [openUndertime, setOpenUndertime] = useState(false);
+
+    // The accrual endpoint redirects back here with month/year already advanced
+    // to the month it just credited (LeaveController::accrual). Inertia reuses
+    // this component across that visit, so useState's initialiser never reruns
+    // and the filter would still read the pre-accrual month — forcing a manual
+    // re-pick of the period just accrued for.
+    //
+    // Adjusted during render rather than in an effect: this is the props
+    // changing underneath state we also own (the filter lets the user override
+    // it without a navigation), so React wants the re-render in the same pass
+    // rather than a cascading second one.
+    const serverPeriod = `${filters?.month ?? ''}-${filters?.year ?? ''}`;
+    const [syncedPeriod, setSyncedPeriod] = useState(serverPeriod);
+
+    if (serverPeriod !== syncedPeriod) {
+        setSyncedPeriod(serverPeriod);
+
+        if (filters?.month && filters?.year) {
+            setDate({
+                month: String(filters.month),
+                year: String(filters.year),
+            });
+            setPage(1);
+        }
+    }
 
     function handleFilter(key: 'month' | 'year', value: string) {
         setDate((current) => ({ ...current, [key]: value }));
@@ -145,7 +175,8 @@ export default function EmployeeBalance({ user, filters }: PageProp) {
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {userData?.hasAccrual &&
+                            {canManageAccruals &&
+                                userData?.hasAccrual &&
                                 (needsInitialAccrual ? (
                                     <AccrualDialog
                                         filters={date}
@@ -260,7 +291,8 @@ export default function EmployeeBalance({ user, filters }: PageProp) {
                                         {Object.entries(pending).map(
                                             ([type, days]) => (
                                                 <li key={type}>
-                                                    {type}: {Number(days).toFixed(3)}{' '}
+                                                    {type}:{' '}
+                                                    {Number(days).toFixed(3)}{' '}
                                                     days
                                                 </li>
                                             ),

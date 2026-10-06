@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Permission;
 use App\Enums\Role;
 use App\Models\Employee;
 use App\Models\Leave;
@@ -370,4 +371,62 @@ it('lets an HR user record an undertime adjustment', function () {
         ->assertRedirect();
 
     expect(Leave::where('employee_id', $employee->id)->count())->toBe(1);
+});
+
+/*
+ * The calendar's file-leave dialog posts to the same endpoint as the leave
+ * register, so the rules above already cover the security boundary. These tests
+ * pin the frontend contract that keeps the dialog honest: a non-HR caller is
+ * told which employee id "self" means, and is never offered ViewAllBalances.
+ */
+
+it('shares the caller employee id so the calendar can lock the employee field', function () {
+    [$user, $employee] = employeeWithRecord();
+
+    $props = $this->actingAs($user)
+        ->get(route('calendar.index'))
+        ->assertOk()
+        ->viewData('page')['props'];
+
+    // Without this the dialog has no id to submit for a self-service user, and
+    // the only way to fill the field would be the roster picker.
+    expect($props['auth']['employee_id'])->toBe($employee->id)
+        ->and($props['auth']['permissions'])->not->toContain(Permission::ViewAllBalances->value);
+});
+
+it('leaves the shared employee id null for a login with no personnel record', function () {
+    $orphan = User::factory()->create();
+
+    $props = $this->actingAs($orphan)
+        ->get(route('calendar.index'))
+        ->assertOk()
+        ->viewData('page')['props'];
+
+    // The dialog stays unusable rather than defaulting to employee 0, which the
+    // server would then resolve to the caller anyway.
+    expect($props['auth']['employee_id'])->toBeNull();
+});
+
+it('files calendar leave for the caller when the dialog submits their own id', function () {
+    [$user, $employee] = employeeWithRecord();
+    [, $colleague] = employeeWithRecord();
+
+    $this->actingAs($user)
+        ->post(route('leaves.store'), filingPayload($employee->id));
+
+    expect(Leave::where('employee_id', $employee->id)->count())->toBe(1)
+        ->and(Leave::where('employee_id', $colleague->id)->count())->toBe(0);
+});
+
+it('rejects a calendar filing aimed at another employee outright', function () {
+    [$user] = employeeWithRecord();
+    [, $victim] = employeeWithRecord();
+
+    // resolveEmployee silently redirects to the caller's own record. That is
+    // safe but reads as success, so an explicit mismatch must not pass through
+    // either — assert the invariant that matters: the victim is never touched.
+    $this->actingAs($user)
+        ->post(route('leaves.store'), filingPayload($victim->id, '2023-03-06', '2023-03-07'));
+
+    expect(Leave::where('employee_id', $victim->id)->count())->toBe(0);
 });

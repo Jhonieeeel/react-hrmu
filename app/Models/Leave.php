@@ -143,6 +143,35 @@ class Leave extends Model
      | --------------------------------------------------------------------- */
 
     /**
+     * Rows that represent a request someone actually filed, as opposed to a
+     * balance movement HR recorded directly.
+     *
+     * Two shapes qualify, which is why this cannot be a single event_type test:
+     *
+     *  - `event_type = 'filing'` — the monthly filing every employee submits.
+     *  - `event_type = 'deduction'` with a filed tag — a leave request, held
+     *    out of the balance until approved.
+     *
+     * Everything else (accruals, tardiness, undertime, absences) is excluded.
+     * Reporting those as "requests" is misleading: an accrual row is a credit
+     * HR granted, and it would otherwise be counted and grouped alongside real
+     * submissions. Filtering on `leave_type` alone does not catch this,
+     * because every accrual carries a leave_type too.
+     *
+     * @param  Builder<static>  $query
+     */
+    public function scopeFiledRequests(Builder $query): void
+    {
+        $query->where(function (Builder $q): void {
+            $q->where('event_type', 'filing')
+                ->orWhere(function (Builder $inner): void {
+                    $inner->where('event_type', 'deduction')
+                        ->whereIn('event_tag', self::FILED_LEAVE_TAGS);
+                });
+        });
+    }
+
+    /**
      * Filings awaiting a decision.
      *
      * @param  Builder<static>  $query

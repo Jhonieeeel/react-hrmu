@@ -184,6 +184,7 @@ class ReplayBalanceAction
             return [
                 $user->id => [
                     'name' => $user->user?->name ?? 'Unknown employee',
+                    'position' => $user->position,
                     'balances' => $newBalances,
                     'events' => $deductionData['events'],
                     'undertimeCount' => $deductionData['undertimeCount'],

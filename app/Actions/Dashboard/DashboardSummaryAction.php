@@ -53,8 +53,13 @@ class DashboardSummaryAction
         $monthStart = $selectedDate->copy()->startOfMonth();
         $monthEnd = $selectedDate->copy()->endOfMonth();
 
+        // Scope to filed requests, not every row carrying this leave_type.
+        // The ledger also holds accruals, tardiness and undertime deductions
+        // under the same leave_type values, and counting those as "requests"
+        // made a type filter that had nothing filed against it look populated.
         $monthlyFilings = Leave::query()
             ->with('employee.user:id,name')
+            ->filedRequests()
             ->where('leave_type', $leaveType)
             ->whereBetween('starts_at', [$monthStart, $monthEnd])
             ->get();

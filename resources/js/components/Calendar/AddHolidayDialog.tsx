@@ -1,3 +1,6 @@
+import { useForm } from '@inertiajs/react';
+import { CalendarIcon } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -8,6 +11,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -15,13 +20,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { CalendarIcon } from 'lucide-react';
-import { useForm } from '@inertiajs/react';
-import { Input } from '@/components/ui/input';
-import React from 'react';
 import { Spinner } from '@/components/ui/spinner';
+import { usePermissions } from '@/hooks/use-permissions';
 import holidays from '@/routes/holidays';
+import { Permissions } from '@/types/auth';
 
 const months = [
     { value: '1', label: 'January' },
@@ -39,6 +41,8 @@ const months = [
 ];
 
 export default function AddHolidayDialog() {
+    const { can } = usePermissions();
+
     const form = useForm({
         holiday_name: '',
         month: '',
@@ -52,6 +56,12 @@ export default function AddHolidayDialog() {
                 form.reset();
             },
         });
+    }
+
+    // Creating holidays is HR-only (permission:manage holidays); the button is
+    // hidden for everyone else so a self-service user never hits a 403.
+    if (!can(Permissions.ManageHolidays)) {
+        return null;
     }
 
     return (
