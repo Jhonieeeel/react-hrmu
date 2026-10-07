@@ -374,6 +374,87 @@ it('lets an HR user record an undertime adjustment', function () {
 });
 
 /*
+ * Self-approval
+ *
+ * A user who holds ReviewLeave decides on filings, so their own request would
+ * sit in the queue waiting for them to approve themselves. These pin the rule
+ * that they skip it instead — and, just as importantly, that the exemption does
+ * not extend to leave they enter on someone else's behalf.
+ */
+
+it('auto-approves a reviewer filing their own leave', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    $own = Employee::factory()->create(['user_id' => $hr->id]);
+    $hr->setRelation('employees', collect([$own]));
+
+    $this->actingAs($hr)
+        ->post(route('leaves.store'), filingPayload($own->id));
+
+    $leave = Leave::where('employee_id', $own->id)->firstOrFail();
+
+    expect($leave->isApproved())->toBeTrue()
+        ->and($leave->isPendingReview())->toBeFalse();
+});
+
+it('keeps a reviewer filing on behalf of another employee in the queue', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $other] = employeeWithRecord();
+
+    $this->actingAs($hr)
+        ->post(route('leaves.store'), filingPayload($other->id));
+
+    $leave = Leave::where('employee_id', $other->id)->firstOrFail();
+
+    // HR entering someone's leave is still that employee's request, so it must
+    // reach a human decision rather than be approved by whoever typed it in.
+    expect($leave->isPendingReview())->toBeTrue()
+        ->and($leave->isApproved())->toBeFalse();
+});
+
+it('auto-approves a super admin filing their own leave', function () {
+    $admin = superAdmin();
+    $own = Employee::factory()->create(['user_id' => $admin->id]);
+    $admin->setRelation('employees', collect([$own]));
+
+    $this->actingAs($admin)
+        ->post(route('leaves.store'), filingPayload($own->id));
+
+    expect(Leave::where('employee_id', $own->id)->firstOrFail()->isApproved())->toBeTrue();
+});
+
+it('still holds a plain employee filing to the review queue', function () {
+    // The counterpart to the rule above: holding FileLeave alone must not be
+    // enough, or every employee would self-approve.
+    [$user, $employee] = employeeWithRecord();
+
+    $this->actingAs($user)
+        ->post(route('leaves.store'), filingPayload($employee->id));
+
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
+});
+
+it('reports the outcome that actually happened for a self-approved filing', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    $own = Employee::factory()->create(['user_id' => $hr->id]);
+    $hr->setRelation('employees', collect([$own]));
+
+    // Telling an admin to wait for approval of a request that is already
+    // approved is the kind of message that sends someone hunting the queue.
+    $this->actingAs($hr)
+        ->post(route('leaves.store'), filingPayload($own->id))
+        ->assertSessionHas('success.message', 'Leave filed and approved.');
+});
+
+it('keeps the awaiting-approval message for a non-self-approved filing', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $other] = employeeWithRecord();
+
+    $this->actingAs($hr)
+        ->post(route('leaves.store'), filingPayload($other->id))
+        ->assertSessionHas('success.message', 'Leave filed successfully and is awaiting approval.');
+});
+
+/*
  * The calendar's file-leave dialog posts to the same endpoint as the leave
  * register, so the rules above already cover the security boundary. These tests
  * pin the frontend contract that keeps the dialog honest: a non-HR caller is
