@@ -91,10 +91,9 @@ class LeaveController extends Controller
         $employee = $this->resolveEmployee($leaveData->employee_id);
         $leaveData->employee_id = $employee->id;
 
-        // Someone who decides on filings does not need a second decision on
-        // their own — see selfApprovable() for why this is limited to their own
-        // record.
-        $autoApprove = $this->selfApprovable($employee);
+        // Whoever decides on filings is treated as having decided on this one —
+        // see filesAsApproval().
+        $autoApprove = $this->filesAsApproval();
 
         $weekdays = $checkDateRangeAction->checkDateRange($leaveData);
 
@@ -114,7 +113,7 @@ class LeaveController extends Controller
         return back()->with('success', [
             // The message has to match what actually happened, otherwise an
             // admin files leave and is told to wait for a queue that will never
-            // show their request.
+            // show the request.
             'message' => $autoApprove
                 ? 'Leave filed and approved.'
                 : 'Leave filed successfully and is awaiting approval.',
@@ -123,29 +122,22 @@ class LeaveController extends Controller
     }
 
     /**
-     * Whether this filing can skip the review queue because the filer is
-     * approving their own leave.
+     * Whether a filing by the current user counts as already approved.
      *
-     * Two conditions, and the second is the important one:
+     * Anyone holding ReviewLeave is the person who decides on filings, so a
+     * request they record — for themselves or on an employee's behalf — is not
+     * queued for someone else to decide. Super-admin satisfies this through the
+     * Gate::before hook.
      *
-     *  1. The user holds ReviewLeave — the ability that makes them the person who
-     *     decides filings, so they would be reviewing their own request.
-     *
-     *  2. The filing is against *their own* employee record. HR may file on
-     *     behalf of anyone (resolveEmployee), and auto-approving those would let
-     *     a filing entered by an admin bypass review entirely. It is the
-     *     employee's request being approved by the same person entering it, so
-     *     it still goes to the queue.
+     * This deliberately does not distinguish whose record was filed against.
+     * HR entering leave for an employee is treated as HR having approved it,
+     * which means nothing recorded by a reviewer reaches the queue. That is the
+     * business rule as specified; the trade-off is that the queue only ever
+     * holds filings from users without ReviewLeave.
      */
-    protected function selfApprovable(Employee $employee): bool
+    protected function filesAsApproval(): bool
     {
-        $user = auth()->user();
-
-        if (! $user->can(Permission::ReviewLeave)) {
-            return false;
-        }
-
-        return $user->employee()?->id === $employee->id;
+        return auth()->user()->can(Permission::ReviewLeave);
     }
 
     /**

@@ -29,6 +29,26 @@ function employeeWithRecord(): array
     return [$user, $employee];
 }
 
+/**
+ * Files a leave request that stays in the review queue.
+ *
+ * The filing has to come from the employee, not from HR: anything a user with
+ * ReviewLeave records is approved on the spot, so an HR-filed request would
+ * never reach the queue these tests are exercising.
+ *
+ * @return array{0: User, 1: Employee}
+ */
+function filePendingLeave(string $start = '2023-03-06', string $end = '2023-03-08'): array
+{
+    [$user, $employee] = employeeWithRecord();
+
+    test()->actingAs($user)
+        ->post(route('leaves.store'), filingPayload($employee->id, $start, $end))
+        ->assertRedirect();
+
+    return [$user, $employee];
+}
+
 it('stores a filed leave as pending and groups its segments', function () {
     [$user, $employee] = employeeWithRecord();
 
@@ -141,10 +161,9 @@ it('stops an employee viewing another employee\'s balance', function () {
 
 it('lets hr approve every segment of a submission at once', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
 
-    $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($employee->id, '2023-03-09', '2023-03-13'));
+    // Mar 9-13 2023 spans a weekend, so it is stored as two segments.
+    [, $employee] = filePendingLeave('2023-03-09', '2023-03-13');
 
     $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
 
@@ -165,10 +184,7 @@ it('lets hr approve every segment of a submission at once', function () {
 
 it('requires a reason when rejecting', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
 
@@ -188,10 +204,7 @@ it('requires a reason when rejecting', function () {
 
 it('stops a second decision on an already reviewed request', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
 
@@ -213,10 +226,7 @@ it('ignores a decision on an unknown filing group', function () {
 
 it('lists a pending request in the review queue', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $response = $this->actingAs($hr)
         ->getJson(route('leave-reviews.data'))
@@ -233,9 +243,7 @@ it('lists a pending request in the review queue', function () {
 
 it('clears the request from the queue once approved', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
 
@@ -252,9 +260,7 @@ it('clears the request from the queue once approved', function () {
 
 it('shows a decided request on the approved tab with its decision trail', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
 
@@ -276,9 +282,7 @@ it('shows a decided request on the approved tab with its decision trail', functi
 
 it('moves a rejected request out of pending and into rejected', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
 
@@ -299,9 +303,7 @@ it('moves a rejected request out of pending and into rejected', function () {
 
 it('falls back to pending for an unknown status filter', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $this->actingAs($hr)
         ->getJson(route('leave-reviews.data', ['status' => 'not-a-status']))
@@ -313,9 +315,7 @@ it('renders the review queue page for a reviewer and hides it from everyone else
     renderPage();
 
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $employee] = employeeWithRecord();
-
-    $this->actingAs($hr)->post(route('leaves.store'), filingPayload($employee->id));
+    [, $employee] = filePendingLeave();
 
     $this->actingAs($hr)
         ->get(route('leave-reviews.index'))
@@ -374,12 +374,12 @@ it('lets an HR user record an undertime adjustment', function () {
 });
 
 /*
- * Self-approval
+ * Auto-approval for reviewers
  *
- * A user who holds ReviewLeave decides on filings, so their own request would
- * sit in the queue waiting for them to approve themselves. These pin the rule
- * that they skip it instead — and, just as importantly, that the exemption does
- * not extend to leave they enter on someone else's behalf.
+ * Whoever holds ReviewLeave is the person who decides on filings, so a request
+ * they record is treated as already decided — whether it is their own leave or
+ * leave they enter for an employee. These pin that, and the boundary that
+ * matters just as much: holding FileLeave alone must never be enough.
  */
 
 it('auto-approves a reviewer filing their own leave', function () {
@@ -396,34 +396,49 @@ it('auto-approves a reviewer filing their own leave', function () {
         ->and($leave->isPendingReview())->toBeFalse();
 });
 
-it('keeps a reviewer filing on behalf of another employee in the queue', function () {
+it('auto-approves a reviewer filing leave for an employee', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    [, $other] = employeeWithRecord();
+    [, $employee] = employeeWithRecord();
 
     $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($other->id));
+        ->post(route('leaves.store'), filingPayload($employee->id));
 
-    $leave = Leave::where('employee_id', $other->id)->firstOrFail();
+    $leave = Leave::where('employee_id', $employee->id)->firstOrFail();
 
-    // HR entering someone's leave is still that employee's request, so it must
-    // reach a human decision rather than be approved by whoever typed it in.
-    expect($leave->isPendingReview())->toBeTrue()
-        ->and($leave->isApproved())->toBeFalse();
+    // HR recording leave is HR approving it, so it must not land in the queue
+    // waiting on a decision nobody is going to make.
+    expect($leave->isApproved())->toBeTrue()
+        ->and($leave->isPendingReview())->toBeFalse();
 });
 
-it('auto-approves a super admin filing their own leave', function () {
+it('auto-approves a super admin filing leave for an employee', function () {
     $admin = superAdmin();
-    $own = Employee::factory()->create(['user_id' => $admin->id]);
-    $admin->setRelation('employees', collect([$own]));
+    [, $employee] = employeeWithRecord();
 
     $this->actingAs($admin)
-        ->post(route('leaves.store'), filingPayload($own->id));
+        ->post(route('leaves.store'), filingPayload($employee->id));
 
-    expect(Leave::where('employee_id', $own->id)->firstOrFail()->isApproved())->toBeTrue();
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isApproved())->toBeTrue();
+});
+
+it('auto-approves a reviewer filing a cto for an employee', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = employeeWithRecord();
+
+    // cto is one of FILED_LEAVE_TAGS, so it would otherwise wait for approval
+    // like any other filing.
+    $this->actingAs($hr)
+        ->post(route('leaves.store'), [
+            ...filingPayload($employee->id),
+            'leave_type' => 'cto',
+            'event_tag' => 'cto',
+        ]);
+
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isApproved())->toBeTrue();
 });
 
 it('still holds a plain employee filing to the review queue', function () {
-    // The counterpart to the rule above: holding FileLeave alone must not be
+    // The counterpart to the rules above: holding FileLeave alone must not be
     // enough, or every employee would self-approve.
     [$user, $employee] = employeeWithRecord();
 
@@ -433,25 +448,34 @@ it('still holds a plain employee filing to the review queue', function () {
     expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
 });
 
-it('reports the outcome that actually happened for a self-approved filing', function () {
+it('reports the outcome that actually happened for a reviewer filing', function () {
     $hr = userWithRole(Role::HrOfficer->value);
-    $own = Employee::factory()->create(['user_id' => $hr->id]);
-    $hr->setRelation('employees', collect([$own]));
+    [, $employee] = employeeWithRecord();
 
     // Telling an admin to wait for approval of a request that is already
     // approved is the kind of message that sends someone hunting the queue.
     $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($own->id))
+        ->post(route('leaves.store'), filingPayload($employee->id))
         ->assertSessionHas('success.message', 'Leave filed and approved.');
 });
 
-it('keeps the awaiting-approval message for a non-self-approved filing', function () {
-    $hr = userWithRole(Role::HrOfficer->value);
-    [, $other] = employeeWithRecord();
+it('keeps the awaiting-approval message for a plain employee filing', function () {
+    [$user, $employee] = employeeWithRecord();
 
-    $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($other->id))
+    $this->actingAs($user)
+        ->post(route('leaves.store'), filingPayload($employee->id))
         ->assertSessionHas('success.message', 'Leave filed successfully and is awaiting approval.');
+});
+
+it('keeps a plain employee filing off the auto-approve path even when they file for themselves', function () {
+    // Guards the permission boundary specifically: an employee who somehow
+    // targets their own record still goes to the queue.
+    [$user, $employee] = employeeWithRecord();
+
+    $this->actingAs($user)
+        ->post(route('leaves.store'), filingPayload($employee->id));
+
+    expect(Leave::where('employee_id', $employee->id)->where('status', false)->exists())->toBeTrue();
 });
 
 /*
