@@ -43,6 +43,11 @@ class RolePermissionSeeder extends Seeder
         Permission::ExportBalances,
         Permission::ManageHolidays,
         Permission::ManageOrganization,
+        // Pass slips. ReviewPassSlips is the one that matters for the business
+        // rule: approving or declining a pass slip is an admin/HR action and is
+        // never granted to an ordinary employee.
+        Permission::ViewAllPassSlips,
+        Permission::ReviewPassSlips,
         Permission::ManagePassSlips,
     ];
 

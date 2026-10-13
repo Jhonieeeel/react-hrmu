@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Enums\Permission;
 use App\Enums\Role;
+use App\Models\PassSlip;
 use App\Models\User;
+use App\Policies\PassSlipPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -30,11 +32,25 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configurePolicies();
         $this->configureAuthorization();
 
         if (app()->environment('local') && request()->header('x-forwarded-proto') === 'https') {
             URL::forceScheme('https');
         }
+    }
+
+    /**
+     * Maps a model to the policy that guards it.
+     *
+     * Registered explicitly rather than relying on Laravel's naming
+     * convention, because the policy abilities here are permission strings
+     * ('review pass slips') as well as the usual model methods — an explicit
+     * binding makes the pairing unambiguous.
+     */
+    protected function configurePolicies(): void
+    {
+        Gate::policy(PassSlip::class, PassSlipPolicy::class);
     }
 
     /**
@@ -88,13 +104,13 @@ class AppServiceProvider extends ServiceProvider
 
         Password::defaults(
             fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
+                ? Password::min(12)
+                    ->mixedCase()
+                    ->letters()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised()
+                : null,
         );
     }
 }

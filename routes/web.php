@@ -8,6 +8,7 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LeaveReviewController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PassSlipController;
+use App\Http\Controllers\PassSlipReviewController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UndertimeController;
 use App\Http\Controllers\UserController;
@@ -126,7 +127,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('data/{employee}/balance', [LeaveController::class, 'userBalance'])->name('leaves.balance');
     Route::get('data/calendar', [CalendarController::class, 'calendarEvents'])->name('calendar.data');
 
+    // Pass slips. Filing is self-service, so these sit outside any permission
+    // group; PassSlipRequest::authorize() gates them.
     Route::get('slip', [PassSlipController::class, 'index'])->name('slip.index');
+    Route::post('slip', [PassSlipController::class, 'store'])->name('slip.store');
+    Route::delete('slip/{passSlip}', [PassSlipController::class, 'destroy'])->name('slip.destroy');
+
+    // Pass slip review queue. Approving and declining a pass slip is an
+    // admin/hr action and is never self-service, so this whole group sits behind
+    // a permission an ordinary employee cannot hold.
+    Route::middleware('permission:review pass slips')->group(function () {
+        Route::get('slip-reviews', [PassSlipReviewController::class, 'index'])->name('slip-reviews.index');
+        Route::get('data/slip-reviews', [PassSlipReviewController::class, 'data'])->name('slip-reviews.data');
+        Route::post('slip-reviews/{passSlip}/approve', [PassSlipReviewController::class, 'approve'])->name('slip-reviews.approve');
+        Route::post('slip-reviews/{passSlip}/decline', [PassSlipReviewController::class, 'decline'])->name('slip-reviews.decline');
+        Route::patch('slip-reviews/{passSlip}/signatories', [PassSlipReviewController::class, 'signatories'])->name('slip-reviews.signatories');
+        Route::patch('slip-reviews/{passSlip}/travel-times', [PassSlipReviewController::class, 'travelTimes'])->name('slip-reviews.travel_times');
+    });
 });
 
 require __DIR__.'/settings.php';

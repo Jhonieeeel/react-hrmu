@@ -34,6 +34,42 @@ class Employee extends Model
     }
 
     /**
+     * @return HasMany<PassSlip, $this>
+     */
+    public function passSlips(): HasMany
+    {
+        return $this->hasMany(PassSlip::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * The immediate supervisor for this employee.
+     *
+     * The business defines the supervisor as whoever heads the section this
+     * employee's unit belongs to, so it is derived rather than stored — an
+     * employee who is promoted into a new section automatically picks up the new
+     * head without anyone having to reassign them.
+     */
+    public function supervisor(): ?User
+    {
+        return $this->section?->head;
+    }
+
+    /**
+     * The "Unit / Section / Division" line printed on a pass slip.
+     *
+     * Built from the employee's designation rather than typed by hand, so the
+     * form cannot drift from the org chart.
+     */
+    public function unitSectionDivisionLabel(): string
+    {
+        return collect([
+            $this->unit?->unit_name,
+            $this->section?->section_name,
+            $this->division?->division_name,
+        ])->filter()->implode(' / ');
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo

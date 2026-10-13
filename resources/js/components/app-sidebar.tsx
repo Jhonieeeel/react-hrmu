@@ -9,6 +9,7 @@ import {
     LayoutGrid,
     Plane,
     ShieldCheck,
+    Stamp,
     User2,
     Wallet,
 } from 'lucide-react';
@@ -32,6 +33,7 @@ import leaveReviews from '@/routes/leave-reviews';
 import leaves from '@/routes/leaves';
 import roleRoutes from '@/routes/roles';
 import slip from '@/routes/slip';
+import slipReviews from '@/routes/slip-reviews';
 import users from '@/routes/users';
 import type { NavItem } from '@/types';
 import { Permissions } from '@/types/auth';
@@ -78,11 +80,19 @@ const mainNavItems: NavItem[] = [
         icon: ShieldCheck,
         permission: Permissions.AssignRoles,
     },
-    // {
-    //     title: 'Pass Slip',
-    //     href: slip.index(),
-    //     icon: FileTextIcon,
-    // },
+    {
+        title: 'Pass Slips',
+        href: slip.index(),
+        icon: Stamp,
+    },
+    {
+        // Approving or declining a pass slip is admin/HR only, so this link is
+        // gated on ReviewPassSlips and hidden from ordinary employees.
+        title: 'Pass Slip Reviews',
+        href: slipReviews.index(),
+        icon: FileTextIcon,
+        permission: Permissions.ReviewPassSlips,
+    },
 ];
 
 const footerNavItems: NavItem[] = [

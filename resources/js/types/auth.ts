@@ -42,6 +42,10 @@ export const Permissions = {
     ExportBalances: 'export balances',
     ManageHolidays: 'manage holidays',
     ManageOrganization: 'manage organization',
+    FilePassSlip: 'file pass slip',
+    ViewOwnPassSlips: 'view own pass slips',
+    ViewAllPassSlips: 'view all pass slips',
+    ReviewPassSlips: 'review pass slips',
     ManagePassSlips: 'manage pass slips',
 } as const;
 

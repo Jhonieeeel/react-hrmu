@@ -41,6 +41,18 @@ class Section extends Model
     }
 
     /**
+     * The person heading this section — the immediate supervisor of every
+     * employee whose unit sits under it, and the "Recommending Approval"
+     * signatory on their pass slips.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function head(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'head_id');
+    }
+
+    /**
      * @return HasManyThrough<Employee, $this>
      */
     public function employees(): HasManyThrough

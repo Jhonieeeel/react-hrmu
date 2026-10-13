@@ -19,6 +19,11 @@ enum Permission: string
     case FileMonthlyReport = 'file monthly report';
     case ViewOwnLeaveHistory = 'view own leave history';
 
+    /* --- Pass slips --- */
+
+    case FilePassSlip = 'file pass slip';
+    case ViewOwnPassSlips = 'view own pass slips';
+
     /* --- Leave review --- */
 
     case ApproveLeave = 'approve leave';
@@ -46,6 +51,11 @@ enum Permission: string
 
     case ManageHolidays = 'manage holidays';
     case ManageOrganization = 'manage organization';
+
+    /* --- Pass slips (HR) --- */
+
+    case ViewAllPassSlips = 'view all pass slips';
+    case ReviewPassSlips = 'review pass slips';
     case ManagePassSlips = 'manage pass slips';
 
     /**
@@ -57,7 +67,13 @@ enum Permission: string
             self::ViewOwnBalance,
             self::ViewOwnLeaveHistory,
             self::FileLeave,
-            self::FileMonthlyReport => 'Self-service',
+            self::FileMonthlyReport,
+            self::FilePassSlip,
+            self::ViewOwnPassSlips => 'Self-service',
+
+            self::ViewAllPassSlips,
+            self::ReviewPassSlips,
+            self::ManagePassSlips => 'Pass slips',
 
             self::ApproveLeave,
             self::ReviewLeave,
@@ -77,8 +93,7 @@ enum Permission: string
             self::ExportBalances => 'Balances and accruals',
 
             self::ManageHolidays,
-            self::ManageOrganization,
-            self::ManagePassSlips => 'Other modules',
+            self::ManageOrganization => 'Other modules',
         };
     }
 
@@ -98,6 +113,8 @@ enum Permission: string
             self::FileLeave,
             self::FileMonthlyReport,
             self::ViewOwnLeaveHistory,
+            self::FilePassSlip,
+            self::ViewOwnPassSlips,
         ];
     }
 
