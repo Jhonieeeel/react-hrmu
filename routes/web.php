@@ -143,6 +143,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('slip-reviews/{passSlip}/decline', [PassSlipReviewController::class, 'decline'])->name('slip-reviews.decline');
         Route::patch('slip-reviews/{passSlip}/signatories', [PassSlipReviewController::class, 'signatories'])->name('slip-reviews.signatories');
         Route::patch('slip-reviews/{passSlip}/travel-times', [PassSlipReviewController::class, 'travelTimes'])->name('slip-reviews.travel_times');
+        // One-tap "they are back". Separate from travel_times because recording a
+        // return must not require retyping the expected departure.
+        Route::post('slip-reviews/{passSlip}/arrival', [PassSlipReviewController::class, 'arrival'])->name('slip-reviews.arrival');
     });
 });
 

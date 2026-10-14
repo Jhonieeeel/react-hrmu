@@ -1,7 +1,5 @@
 import { useAppearance } from '@/hooks/use-appearance';
-import { cn } from '@/lib/utils';
-import getCalendarEventsOption from '@/queries/fetchCalendarEvents';
-import { EventProp, User } from '@/types';
+import { compactName, cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { createViewMonthGrid } from '@schedule-x/calendar';
 import { createEventsServicePlugin } from '@schedule-x/events-service';
@@ -9,10 +7,13 @@ import { ScheduleXCalendar, useCalendarApp } from '@schedule-x/react';
 import '@schedule-x/theme-default/dist/index.css';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import getCalendarEventsOption from '@/queries/fetchCalendarEvents';
+import type { EventProp, CalendarEvent, User } from '@/types';
 import 'temporal-polyfill/global';
-import { calendarConfig } from './config/colors';
+import { calendarConfig, calendarThemeFor } from './config/colors';
 import CustomEventModal from './CustomEventModal';
 import LeaveFormDialog from './LeaveFormDialog';
+import { withStatusMarker } from './LeaveStatus';
 
 type PageProps = {
     users: User[];
@@ -27,17 +28,7 @@ export default function LeaveCalendar({ users }: PageProps) {
 
     const [open, setOpen] = useState(false);
 
-    const [event, setEvent] = useState<EventProp>({
-        id: 0,
-        title: '',
-        start: '',
-        end: '',
-        user: [],
-        status: false,
-        employee_id: 0,
-        calendarTitle: '',
-        calendarTheme: '',
-    });
+    const [event, setEvent] = useState<CalendarEvent | null>(null);
 
     const [openDialog, setOpenDialog] = useState(false);
 
@@ -57,15 +48,21 @@ export default function LeaveCalendar({ users }: PageProps) {
                 if (event.calendarId === 'holiday') {
                     return;
                 }
+
                 setEvent({
-                    id: event.id,
+                    id: String(event.id),
                     title: event.calendarTitle ?? '',
                     start: event.start.toString(),
                     end: event.end.toString(),
                     employee_id: event.employee_id,
                     user: event.user,
+                    status: Boolean(event.status),
                     calendarTitle: event.calendarTitle,
-                    calendarTheme: calendarConfig[event.calendarId],
+                    calendarTheme: calendarThemeFor(event.calendarId),
+                    // Carried from the event the grid is holding, which is what
+                    // the dialog needs to decide whether to offer a decision.
+                    approval_state: event.approval_state,
+                    filing_group_id: event.filing_group_id,
                 });
 
                 setOpen(true);
@@ -82,6 +79,16 @@ export default function LeaveCalendar({ users }: PageProps) {
         if (calendarEvents && calendarEvents.length > 0) {
             const formatted = calendarEvents.map((event: EventProp) => ({
                 ...event,
+                // The grid renders the title as plain text, so both the decision
+                // marker and the compact name have to be carried in the string
+                // itself — otherwise a month view would show an undecided filing
+                // exactly like an approved one, in a name too long to fit a cell.
+                title: withStatusMarker(
+                    event.calendarId === 'holiday'
+                        ? event.title
+                        : compactName(event.title),
+                    event.approval_state,
+                ),
                 start: Temporal.PlainDate.from(event.start),
                 end: Temporal.PlainDate.from(event.end),
             }));
@@ -101,7 +108,6 @@ export default function LeaveCalendar({ users }: PageProps) {
             </div>
             {event && (
                 <CustomEventModal
-                    tModal
                     open={open}
                     onOpenChange={setOpen}
                     calendarEvent={event}

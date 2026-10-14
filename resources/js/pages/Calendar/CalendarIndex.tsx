@@ -12,8 +12,8 @@ import {
 import AddHolidayDialog from '@/components/Calendar/AddHolidayDialog';
 import { HolidayColumns } from '@/components/Calendar/columns/HolidayColumns';
 import LeaveCalendar from '@/components/Calendar/LeaveCalendar';
+import { LeaveStatusBadge } from '@/components/Calendar/LeaveStatus';
 import { DataTable } from '@/components/Leave/table/DataTable';
-import { Badge } from '@/components/ui/badge';
 import {
     Card,
     CardContent,
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermissions } from '@/hooks/use-permissions';
+import { compactName } from '@/lib/utils';
 import calendar from '@/routes/calendar';
 import leaves from '@/routes/leaves';
 import type { Holiday, User } from '@/types';
@@ -35,7 +36,8 @@ type UpcomingLeave = {
     leave_type: string;
     starts_at: string;
     ends_at: string;
-    status: boolean;
+    /** Mirrors Leave::approvalState(); the raw boolean cannot tell a rejection from an undecided filing. */
+    approval_state: 'pending' | 'approved' | 'rejected';
 };
 
 type PageProps = {
@@ -201,22 +203,15 @@ export default function CalendarIndex({
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <p className="truncate text-sm font-semibold">
-                                                            {
-                                                                leave.employee_name
-                                                            }
+                                                            {compactName(
+                                                                leave.employee_name,
+                                                            )}
                                                         </p>
-                                                        <Badge
-                                                            variant="outline"
-                                                            className={
-                                                                leave.status
-                                                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
-                                                                    : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                                                        <LeaveStatusBadge
+                                                            state={
+                                                                leave.approval_state
                                                             }
-                                                        >
-                                                            {leave.status
-                                                                ? 'Approved'
-                                                                : 'Pending'}
-                                                        </Badge>
+                                                        />
                                                     </div>
                                                     <p className="mt-1 text-xs text-muted-foreground capitalize">
                                                         {leave.leave_type}

@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -120,6 +121,40 @@ class PassSlipReviewController extends Controller
         $passSlip->update($request->payload());
 
         return $this->respond($request, 'Travel times updated.');
+    }
+
+    /**
+     * Records that the personnel has returned, at the moment HR says so.
+     *
+     * Separate from travelTimes because this is the one action an officer
+     * performs dozens of times a day — it backs the drag-to-arrive strip and its
+     * button fallback — and it must not require retyping the expected departure
+     * to be saved correctly.
+     *
+     * The timestamp is taken from the server rather than the browser: the drag is
+     * a gesture, not a time entry, and a client clock is not evidence of when
+     * somebody walked through the door. A slip that needs a different time is
+     * corrected through travelTimes.
+     */
+    public function arrival(Request $request, PassSlip $passSlip): RedirectResponse|JsonResponse
+    {
+        $this->authorize('editTravelTimes', $passSlip);
+
+        // A declined slip was never granted, so there is no trip whose return
+        // could be recorded. Refusing here keeps a stray drag from implying the
+        // office had let the person leave.
+        if ($passSlip->isDeclined()) {
+            throw ValidationException::withMessages([
+                'actual_arrival' => 'A declined pass slip cannot be marked as arrived.',
+            ]);
+        }
+
+        $passSlip->forceFill(['actual_arrival' => now()])->save();
+
+        return $this->respond(
+            $request,
+            sprintf('Recorded arrival at %s for %s.', now()->format('g:i A'), $passSlip->printed_name ?? 'the personnel'),
+        );
     }
 
     /**

@@ -90,7 +90,8 @@ export type DataResponse<T> = {
 };
 
 export type EventProp = {
-    id: number;
+    /** Leave ids arrive as strings; holidays are prefixed (`holiday-3`). */
+    id: number | string;
     title: string;
     end: Temporal.PlainDate;
     start: Temporal.PlainDate;
@@ -99,6 +100,13 @@ export type EventProp = {
     status: boolean;
     calendarTitle: string;
     calendarId: string;
+    /** Mirrors Leave::approvalState(). Absent on holidays. */
+    approval_state?: 'pending' | 'approved' | 'rejected';
+    /**
+     * The filing this row belongs to. Decisions act on the whole group, so a
+     * segment cannot be approved on its own.
+     */
+    filing_group_id?: string | null;
 };
 
 export type CalendarEvent = {
@@ -110,7 +118,10 @@ export type CalendarEvent = {
     employee_id: number;
     status: boolean;
     calendarTitle: string;
-    calendarTheme: {
+    approval_state?: 'pending' | 'approved' | 'rejected';
+    filing_group_id?: string | null;
+    /** Absent for a leave type this theme set does not colour. */
+    calendarTheme?: {
         lightColors: {
             main: string;
             container: string;

@@ -414,6 +414,54 @@ it('cannot rewrite the purpose through the travel times endpoint', function () {
 
 /*
 |--------------------------------------------------------------------------
+| HR recording a return
+|--------------------------------------------------------------------------
+*/
+
+it('records the arrival on an approved slip at the moment hr says so', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    $slip = PassSlip::factory()->approved()->create([
+        'user_id' => employeeUser()->id,
+        'expected_departure' => now()->subHours(5),
+        'expected_arrival' => now()->addHours(5),
+    ]);
+
+    $this->actingAs($hr)
+        ->post(route('slip-reviews.arrival', $slip))
+        ->assertRedirect();
+
+    // Stamped server-side: the request carries no timestamp, so a browser clock
+    // cannot decide when somebody got back.
+    expect($slip->fresh()->hasActualArrival())->toBeTrue()
+        ->and($slip->fresh()->actual_arrival->toDateTimeString())
+        ->toBe(now()->toDateTimeString());
+});
+
+it('refuses a return recorded from an ordinary employee', function () {
+    $slip = PassSlip::factory()->approved()->create(['user_id' => employeeUser()->id]);
+
+    $this->actingAs(employeeUser())
+        ->post(route('slip-reviews.arrival', $slip))
+        ->assertForbidden();
+
+    expect($slip->fresh()->hasActualArrival())->toBeFalse();
+});
+
+it('refuses to record a return on a declined slip', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    $slip = PassSlip::factory()->declined()->create(['user_id' => employeeUser()->id]);
+
+    // A slip that was never granted has no trip to come back from; recording one
+    // would imply the office had let the person leave.
+    $this->actingAs($hr)
+        ->post(route('slip-reviews.arrival', $slip))
+        ->assertSessionHasErrors('actual_arrival');
+
+    expect($slip->fresh()->hasActualArrival())->toBeFalse();
+});
+
+/*
+|--------------------------------------------------------------------------
 | Queue
 |--------------------------------------------------------------------------
 */

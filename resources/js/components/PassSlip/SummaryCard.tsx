@@ -5,6 +5,7 @@ import {
     Clock,
     FileText,
     House,
+    LogIn,
     MapPin,
     PenLine,
     Stamp,
@@ -22,13 +23,13 @@ import { cn } from '@/lib/utils';
 import {
     DetailField,
     formatDate,
-    STATUS_BORDER,
-    STATUS_TONE,
-    TravelTimes
-    
-    
+    formatDateTime,
+    slipVisualState,
+    TravelTimes,
+    VISUAL_BORDER,
+    VISUAL_TONE,
 } from './fields';
-import type {PassSlipStatus, PassSlipView} from './fields';
+import type { PassSlipView } from './fields';
 
 /**
  * The read view of a single pass slip, shared by both screens.
@@ -45,6 +46,7 @@ export function SummaryCard({
     slip,
     leading = 'request',
     travelTimesActions,
+    arrivalActions,
     children,
     className,
 }: {
@@ -62,22 +64,29 @@ export function SummaryCard({
      * screen simply omits this.
      */
     travelTimesActions?: React.ReactNode;
+    /**
+     * The "record the return" controls, handed straight to the arrival strip.
+     * Omitted on the employee's own screen — see ArrivalControl for why the
+     * read-only version is rendered there but the gesture is not.
+     */
+    arrivalActions?: React.ReactNode;
     children?: React.ReactNode;
     className?: string;
 }) {
     const showOutcomeFirst = leading === 'outcome';
+    const visualState = slipVisualState(slip);
 
     return (
         <Collapsible
             className={cn(
-                'bg-card overflow-hidden rounded-xl border shadow-sm transition-shadow hover:shadow-md',
-                STATUS_BORDER[slip.status],
+                'overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md',
+                VISUAL_BORDER[visualState],
                 'border-l-4',
                 className,
             )}
         >
             <CollapsibleTrigger
-                className="hover:bg-muted/40 w-full px-5 py-4 text-left transition-colors"
+                className="w-full px-5 py-4 text-left transition-colors hover:bg-muted/40"
                 aria-label="Toggle slip details"
             >
                 <div className="flex items-start justify-between gap-4">
@@ -91,7 +100,7 @@ export function SummaryCard({
 
                     <div className="flex shrink-0 flex-col items-end gap-1.5">
                         <TypeBadge slip={slip} />
-                        <StatusPill status={slip.status} />
+                        <StatusPill slip={slip} />
                     </div>
                 </div>
             </CollapsibleTrigger>
@@ -123,8 +132,10 @@ export function SummaryCard({
                             label="Personnel"
                             value={
                                 <span className="flex flex-col">
-                                    <span>{slip.printed_name ?? 'Unknown'}</span>
-                                    <span className="text-muted-foreground text-xs">
+                                    <span>
+                                        {slip.printed_name ?? 'Unknown'}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
                                         {[slip.position, slip.usd]
                                             .filter(Boolean)
                                             .join(' · ')}
@@ -138,7 +149,7 @@ export function SummaryCard({
                     <DetailField
                         label="Purpose"
                         value={
-                            <span className="text-muted-foreground text-sm">
+                            <span className="text-sm text-muted-foreground">
                                 {slip.purpose}
                             </span>
                         }
@@ -152,6 +163,11 @@ export function SummaryCard({
                         actions={travelTimesActions}
                     />
 
+                    {/* Sits below the panel rather than inside it: the panel is
+                        the record of what was filed, this is the answer to
+                        "are they back yet" and deserves its own block. */}
+                    {arrivalActions}
+
                     {children}
                 </CardContent>
             </CollapsibleContent>
@@ -163,10 +179,10 @@ function RequestLead({ slip }: { slip: PassSlipView }) {
     return (
         <>
             <span className="truncate font-medium">{slip.destination}</span>
-            <span className="text-muted-foreground line-clamp-1 text-xs">
+            <span className="line-clamp-1 text-xs text-muted-foreground">
                 {slip.purpose}
             </span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs text-muted-foreground">
                 {slip.printed_name ?? 'Unknown'} ·{' '}
                 {formatDate(slip.date_requested)}
             </span>
@@ -184,11 +200,12 @@ function OutcomeLead({ slip }: { slip: PassSlipView }) {
             <span className="truncate font-medium">{slip.destination}</span>
 
             {slip.status === 'pending' ? (
-                <span className="text-muted-foreground line-clamp-1 text-xs">
-                    Awaiting approval · filed {formatDate(slip.date_accomplished)}
+                <span className="line-clamp-1 text-xs text-muted-foreground">
+                    Awaiting approval · filed{' '}
+                    {formatDate(slip.date_accomplished)}
                 </span>
             ) : (
-                <span className="text-muted-foreground line-clamp-1 text-xs">
+                <span className="line-clamp-1 text-xs text-muted-foreground">
                     {slip.status === 'approved' ? 'Approved' : 'Declined'}
                     {slip.reviewed_at
                         ? ` on ${formatDate(slip.reviewed_at)}`
@@ -197,8 +214,16 @@ function OutcomeLead({ slip }: { slip: PassSlipView }) {
                 </span>
             )}
 
+            {/* The return is a separate fact from the decision, so it gets its own
+                line rather than being folded into the outcome text above. */}
+            {slip.actual_arrival && (
+                <span className="line-clamp-1 text-xs text-muted-foreground">
+                    Arrived {formatDateTime(slip.actual_arrival)}
+                </span>
+            )}
+
             {slip.review_remarks && (
-                <span className="text-muted-foreground line-clamp-2 text-xs italic">
+                <span className="line-clamp-2 text-xs text-muted-foreground italic">
                     “{slip.review_remarks}”
                 </span>
             )}
@@ -229,23 +254,36 @@ function TypeBadge({ slip }: { slip: PassSlipView }) {
     );
 }
 
-function StatusPill({ status }: { status: PassSlipStatus }) {
+/**
+ * The collapsed status pill.
+ *
+ * Reads the derived visual state rather than the raw decision, so an approved
+ * slip whose personnel is already back is labelled "arrived" instead of
+ * repeating "approved" on a card that is otherwise green like every other
+ * approved one — the colour was already telling the story, the pill now agrees
+ * with it.
+ */
+function StatusPill({ slip }: { slip: PassSlipView }) {
+    const visualState = slipVisualState(slip);
+
     const Icon =
-        status === 'approved'
-            ? CheckCircle2
-            : status === 'declined'
-              ? XCircle
-              : Clock;
+        visualState === 'arrived'
+            ? LogIn
+            : visualState === 'approved'
+              ? CheckCircle2
+              : visualState === 'declined'
+                ? XCircle
+                : Clock;
 
     return (
         <span
             className={cn(
                 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium capitalize',
-                STATUS_TONE[status],
+                VISUAL_TONE[visualState],
             )}
         >
             <Icon className="size-3" />
-            {status}
+            {visualState}
         </span>
     );
 }
@@ -267,7 +305,7 @@ export function SignatoryLines({
     children?: React.ReactNode;
 }) {
     return (
-        <div className="bg-muted/30 space-y-3 rounded-lg border p-4">
+        <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
             <div className="grid gap-3 sm:grid-cols-2">
                 <DetailField
                     label="Recommending approval"
@@ -286,4 +324,3 @@ export function SignatoryLines({
         </div>
     );
 }
-

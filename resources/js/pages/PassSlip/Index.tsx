@@ -3,11 +3,9 @@ import { format } from 'date-fns';
 import { BriefcaseBusiness, House, Stamp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import SelectCombobox from '@/components/Leave/SelectCombobox';
+import { ArrivalControl } from '@/components/PassSlip/ArrivalControl';
 import type { PassSlipView } from '@/components/PassSlip/fields';
-import {
-    SignatoryLines,
-    SummaryCard,
-} from '@/components/PassSlip/SummaryCard';
+import { SignatoryLines, SummaryCard } from '@/components/PassSlip/SummaryCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -129,8 +127,14 @@ export default function PassSlips({
             preserveScroll: true,
             onSuccess: () => {
                 form.reset();
-                form.setData('date_requested', format(new Date(), 'yyyy-MM-dd'));
-                form.setData('date_accomplished', format(new Date(), 'yyyy-MM-dd'));
+                form.setData(
+                    'date_requested',
+                    format(new Date(), 'yyyy-MM-dd'),
+                );
+                form.setData(
+                    'date_accomplished',
+                    format(new Date(), 'yyyy-MM-dd'),
+                );
             },
         });
     }
@@ -166,9 +170,7 @@ export default function PassSlips({
 
                 <Tabs value={tab} onValueChange={setTab}>
                     <TabsList variant="line">
-                        <TabsTrigger value="file">
-                            File a slip
-                        </TabsTrigger>
+                        <TabsTrigger value="file">File a slip</TabsTrigger>
                         <TabsTrigger value="mine">
                             My slips
                             <Badge
@@ -333,8 +335,8 @@ export default function PassSlips({
                                                         placeholder="Next higher official"
                                                     />
                                                     <FieldDescription>
-                                                        Optional — HR can
-                                                        assign one later.
+                                                        Optional — HR can assign
+                                                        one later.
                                                     </FieldDescription>
                                                 </Field>
                                             </>
@@ -368,8 +370,8 @@ export default function PassSlips({
                                                 value={form.data.request_type}
                                                 onValueChange={(value) => {
                                                     if (!value) {
-return;
-}
+                                                        return;
+                                                    }
 
                                                     form.setData(
                                                         'request_type',
@@ -408,8 +410,7 @@ return;
                                                 <Input
                                                     type="date"
                                                     value={
-                                                        form.data
-                                                            .date_requested
+                                                        form.data.date_requested
                                                     }
                                                     onChange={(event) =>
                                                         form.setData(
@@ -434,7 +435,8 @@ return;
                                                         onChange={(event) =>
                                                             form.setData(
                                                                 'date_accomplished',
-                                                                event.target.value,
+                                                                event.target
+                                                                    .value,
                                                             )
                                                         }
                                                     />
@@ -464,8 +466,9 @@ return;
                                                         )
                                                     }
                                                 />
-                                                {form.errors.expected_departure && (
-                                                    <p className="text-destructive text-sm">
+                                                {form.errors
+                                                    .expected_departure && (
+                                                    <p className="text-sm text-destructive">
                                                         {
                                                             form.errors
                                                                 .expected_departure
@@ -477,7 +480,7 @@ return;
                                             <Field>
                                                 <FieldLabel>
                                                     Expected arrival{' '}
-                                                    <span className="text-muted-foreground font-normal">
+                                                    <span className="font-normal text-muted-foreground">
                                                         (optional)
                                                     </span>
                                                 </FieldLabel>
@@ -498,8 +501,9 @@ return;
                                                     Leave blank if you are just
                                                     leaving early.
                                                 </FieldDescription>
-                                                {form.errors.expected_arrival && (
-                                                    <p className="text-destructive text-sm">
+                                                {form.errors
+                                                    .expected_arrival && (
+                                                    <p className="text-sm text-destructive">
                                                         {
                                                             form.errors
                                                                 .expected_arrival
@@ -510,9 +514,7 @@ return;
                                         </FieldGroup>
 
                                         <Field>
-                                            <FieldLabel>
-                                                Destination
-                                            </FieldLabel>
+                                            <FieldLabel>Destination</FieldLabel>
                                             <Input
                                                 placeholder="Pavilion / Office / Etc."
                                                 value={form.data.destination}
@@ -524,10 +526,8 @@ return;
                                                 }
                                             />
                                             {form.errors.destination && (
-                                                <p className="text-destructive text-sm">
-                                                    {
-                                                        form.errors.destination
-                                                    }
+                                                <p className="text-sm text-destructive">
+                                                    {form.errors.destination}
                                                 </p>
                                             )}
                                         </Field>
@@ -546,7 +546,7 @@ return;
                                                 }
                                             />
                                             {form.errors.purpose && (
-                                                <p className="text-destructive text-sm">
+                                                <p className="text-sm text-destructive">
                                                     {form.errors.purpose}
                                                 </p>
                                             )}
@@ -587,9 +587,7 @@ return;
                                     <button
                                         key={value}
                                         type="button"
-                                        onClick={() =>
-                                            setMyStatusFilter(value)
-                                        }
+                                        onClick={() => setMyStatusFilter(value)}
                                         className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
                                             myStatusFilter === value
                                                 ? 'border-primary bg-primary text-primary-foreground'
@@ -637,9 +635,9 @@ return;
  * remember. Actions sit inside the expanded card rather than on the collapsed
  * row so a stray click cannot withdraw a request.
  *
- * There is no control here for the actual arrival: HR records that, not the
- * filer. The personnel's only action is withdrawing a request HR has not yet
- * decided.
+ * The arrival strip is here read-only. Recording the actual arrival is HR's
+ * record, not the filer's claim — but the personnel is entitled to see whether
+ * anybody has confirmed they came back, and silence reads as "nobody noticed".
  */
 function MySlipCard({
     slip,
@@ -649,7 +647,11 @@ function MySlipCard({
     onWithdraw: (id: number) => void;
 }) {
     return (
-        <SummaryCard slip={slip} leading="outcome">
+        <SummaryCard
+            slip={slip}
+            leading="outcome"
+            arrivalActions={<ArrivalControl slip={slip} />}
+        >
             <SignatoryLines
                 recommendedBy={slip.recommended_by_name}
                 assignedTo={slip.assigned_to_name}
@@ -672,15 +674,13 @@ function MySlipCard({
 function EmptyMySlips({ filtering }: { filtering: boolean }) {
     return (
         <div className="flex min-h-56 flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-5 text-center">
-            <div className="bg-muted text-muted-foreground rounded-full p-3">
+            <div className="rounded-full bg-muted p-3 text-muted-foreground">
                 <Stamp className="size-5" />
             </div>
             <p className="text-sm font-medium">
-                {filtering
-                    ? 'Nothing in this bucket'
-                    : 'Nothing filed yet'}
+                {filtering ? 'Nothing in this bucket' : 'Nothing filed yet'}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
                 {filtering
                     ? 'Try another status filter.'
                     : 'Slips you file will appear here.'}

@@ -11,11 +11,9 @@ import {
 import { useMemo, useState } from 'react';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import SelectCombobox from '@/components/Leave/SelectCombobox';
+import { ArrivalControl } from '@/components/PassSlip/ArrivalControl';
 import type { PassSlipView } from '@/components/PassSlip/fields';
-import {
-    SignatoryLines,
-    SummaryCard,
-} from '@/components/PassSlip/SummaryCard';
+import { SignatoryLines, SummaryCard } from '@/components/PassSlip/SummaryCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,9 +101,7 @@ export default function PassSlipReviewQueue({
                 row.purpose,
             ]
                 .filter(Boolean)
-                .some((field) =>
-                    String(field).toLowerCase().includes(term),
-                ),
+                .some((field) => String(field).toLowerCase().includes(term)),
         );
     }, [requests.data, search]);
 
@@ -197,6 +193,30 @@ export default function PassSlipReviewQueue({
         );
     }
 
+    /**
+     * Records that the personnel is back, at whatever time the server says it is.
+     *
+     * Shares the travel-times reload because it changes the same record: the
+     * card's border, its pill and the arrival strip all depend on
+     * `actual_arrival`, and a partial reload of only the queue props would leave
+     * them stale.
+     */
+    function recordArrival(id: number) {
+        setProcessing(id);
+        setError(null);
+
+        router.post(
+            slipReviews.arrival(id).url,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: DECISION_PROPS,
+                onFinish: () => setProcessing(null),
+            },
+        );
+    }
+
     function goToPage(page: number) {
         router.get(slipReviews.index({ query: { status, page } }).url, {
             preserveState: true,
@@ -268,7 +288,7 @@ export default function PassSlipReviewQueue({
                 </Tabs>
 
                 {error && (
-                    <p className="text-destructive text-sm font-medium">
+                    <p className="text-sm font-medium text-destructive">
                         {error}
                     </p>
                 )}
@@ -278,12 +298,10 @@ export default function PassSlipReviewQueue({
                     frameless list just adds a seam to scan past. */}
                 <div className="flex items-center gap-3">
                     <div className="relative flex-1">
-                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
-                            onChange={(event) =>
-                                setSearch(event.target.value)
-                            }
+                            onChange={(event) => setSearch(event.target.value)}
                             placeholder="Search this page by name, destination or purpose"
                             className="pl-9"
                         />
@@ -301,7 +319,7 @@ export default function PassSlipReviewQueue({
                     )}
                 </div>
 
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Filter className="size-3.5" />
                     {search
                         ? `Showing ${visible.length} of ${total} on this page`
@@ -317,18 +335,34 @@ export default function PassSlipReviewQueue({
                     <div className="flex flex-col gap-4">
                         {visible.map((row) => (
                             <SummaryCard
-                            key={row.id}
-                            slip={row}
-                            leading="request"
-                            travelTimesActions={
-                                canEditTravelTimes ? (
-                                    <TravelTimesEditor
-                                        slip={row}
-                                        onSave={saveTravelTimes}
-                                    />
-                                ) : undefined
-                            }
-                        >
+                                key={row.id}
+                                slip={row}
+                                leading="request"
+                                travelTimesActions={
+                                    canEditTravelTimes ? (
+                                        <TravelTimesEditor
+                                            slip={row}
+                                            onSave={saveTravelTimes}
+                                        />
+                                    ) : undefined
+                                }
+                                arrivalActions={
+                                    // Only on the decided tabs: a slip still awaiting a
+                                    // decision has no return to record yet, and the
+                                    // strip would only repeat that back.
+                                    canEditTravelTimes &&
+                                    row.status !== 'pending' ? (
+                                        <ArrivalControl
+                                            slip={row}
+                                            canRecord
+                                            pending={processing === row.id}
+                                            onRecordArrival={() =>
+                                                recordArrival(row.id)
+                                            }
+                                        />
+                                    ) : undefined
+                                }
+                            >
                                 <SignatoryLines
                                     recommendedBy={row.recommended_by_name}
                                     assignedTo={row.assigned_to_name}
@@ -465,16 +499,12 @@ function TravelTimesEditor({
     if (!open) {
         return (
             <div className="flex items-center justify-between gap-2 border-t pt-3">
-                <span className="text-muted-foreground text-xs">
-                    Expected departure is the filer&apos;s; the actual arrival is
-                    recorded by HR.
+                <span className="text-xs text-muted-foreground">
+                    Expected departure is the filer&apos;s; the actual arrival
+                    is recorded by HR.
                 </span>
 
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setOpen(true)}
-                >
+                <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
                     <PencilLine className="size-3.5" />
                     {slip.actual_arrival ? 'Correct times' : 'Record arrival'}
                 </Button>
@@ -492,9 +522,7 @@ function TravelTimesEditor({
                     <Input
                         type="datetime-local"
                         value={departure}
-                        onChange={(event) =>
-                            setDeparture(event.target.value)
-                        }
+                        onChange={(event) => setDeparture(event.target.value)}
                     />
                 </div>
 
@@ -505,9 +533,7 @@ function TravelTimesEditor({
                     <Input
                         type="datetime-local"
                         value={arrival}
-                        onChange={(event) =>
-                            setArrival(event.target.value)
-                        }
+                        onChange={(event) => setArrival(event.target.value)}
                     />
                 </div>
             </div>
@@ -527,9 +553,7 @@ function TravelTimesEditor({
 
                 <Button
                     size="sm"
-                    onClick={() =>
-                        onSave(slip.id, departure, arrival)
-                    }
+                    onClick={() => onSave(slip.id, departure, arrival)}
                 >
                     Save
                 </Button>
@@ -551,13 +575,15 @@ function toDatetimeLocal(value: string | null) {
 function EmptyState({ searching }: { searching: boolean }) {
     return (
         <div className="flex min-h-56 flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-5 text-center">
-            <div className="bg-muted text-muted-foreground rounded-full p-3">
+            <div className="rounded-full bg-muted p-3 text-muted-foreground">
                 <Stamp className="size-5" />
             </div>
             <p className="text-sm font-medium">
-                {searching ? 'No slips match that search' : 'Nothing here right now'}
+                {searching
+                    ? 'No slips match that search'
+                    : 'Nothing here right now'}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
                 {searching
                     ? 'Try a different name, destination or purpose.'
                     : 'Newly filed slips will appear here for a decision.'}
@@ -583,14 +609,14 @@ function DecisionOutcome({ slip }: { slip: PassSlipView }) {
             <span className="font-medium capitalize">{slip.status}</span>
 
             {slip.reviewed_at && (
-                <span className="text-muted-foreground ml-2 text-xs">
+                <span className="ml-2 text-xs text-muted-foreground">
                     {format(parseISO(slip.reviewed_at), 'MMM d, yyyy h:mm a')}
                     {slip.reviewer_name ? ` · ${slip.reviewer_name}` : ''}
                 </span>
             )}
 
             {slip.review_remarks && (
-                <p className="text-muted-foreground mt-1.5 text-xs italic">
+                <p className="mt-1.5 text-xs text-muted-foreground italic">
                     “{slip.review_remarks}”
                 </p>
             )}

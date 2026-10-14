@@ -1,3 +1,13 @@
+import { router } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+    BadgeCheck,
+    CalendarCheck,
+    CalendarDays,
+    Pencil,
+    Trash2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,12 +20,11 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/hooks/use-permissions';
 import calendar from '@/routes/calendar';
-import { CalendarEvent, User } from '@/types';
-import { router } from '@inertiajs/react';
-import { CalendarCheck, CalendarDays, Pencil, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import leaveReviews from '@/routes/leave-reviews';
+import type { CalendarEvent } from '@/types';
+import { LeaveStatusBadge, resolveStatus } from './LeaveStatus';
 
 type Props = {
     open: boolean;
@@ -26,6 +35,7 @@ type Props = {
 
 function formatDate(dateStr: string) {
     const date = new Date(dateStr);
+
     return {
         date: date.toLocaleDateString('en-US', {
             month: 'short',
@@ -55,6 +65,7 @@ function useIsDarkMode() {
             attributes: true,
             attributeFilter: ['class'],
         });
+
         return () => observer.disconnect();
     }, []);
 
@@ -71,41 +82,89 @@ export default function ViewEventDialog({
     const end = formatDate(calendarEvent.end);
     const isDark = useIsDarkMode();
     const queryClient = useQueryClient();
+    const { canReviewLeave } = usePermissions();
 
     const theme = isDark
         ? calendarEvent.calendarTheme?.darkColors
         : calendarEvent.calendarTheme?.lightColors;
 
+    /**
+     * Whether this is a filing somebody still has to answer.
+     *
+     * `filing_group_id` is what the decision acts on, so its absence means the
+     * row cannot be decided from here — the button is withheld rather than
+     * offered and quietly refused. Holidays never open this dialog at all.
+     */
+    const canDecide =
+        canReviewLeave &&
+        resolveStatus(calendarEvent.approval_state) === 'pending' &&
+        Boolean(calendarEvent.filing_group_id);
+
+    const [approving, setApproving] = useState(false);
+
     function handleDelete() {
-        router.delete(calendar.destroy({ leave: Number(calendarEvent.id) }).url, {
-            onSuccess: () => {
-                queryClient.invalidateQueries({
-                    queryKey: ['calendarEvents'],
-                });
-                onOpenChange(false);
+        router.delete(
+            calendar.destroy({ leave: Number(calendarEvent.id) }).url,
+            {
+                onSuccess: () => {
+                    queryClient.invalidateQueries({
+                        queryKey: ['calendarEvents'],
+                    });
+                    onOpenChange(false);
+                },
             },
-        });
+        );
+    }
+
+    /**
+     * Approves the whole filing this event is part of, then refetches the
+     * events so the grid re-renders with the marker and badge that say it was
+     * approved — the dialog's own state is not enough, because the reason the
+     * calendar needed the decision in the first place is that it shows
+     * undecided filings too.
+     */
+    function handleApprove() {
+        setApproving(true);
+
+        router.post(
+            leaveReviews.approve(calendarEvent.filing_group_id as string).url,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    queryClient.invalidateQueries({
+                        queryKey: ['calendarEvents'],
+                    });
+                    onOpenChange(false);
+                },
+                onFinish: () => setApproving(false),
+            },
+        );
     }
 
     return (
         <>
             {/* Title badge */}
             <div className="border-b px-5 py-3.5">
-                <span
-                    className="tracking inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium uppercase"
-                    style={{
-                        backgroundColor: theme?.container,
-                        color: theme?.onContainer,
-                    }}
-                >
+                <div className="flex items-center justify-between gap-2">
                     <span
-                        className="h-1.5 w-1.5 rounded-full"
+                        className="tracking inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium uppercase"
                         style={{
-                            backgroundColor: theme?.main,
+                            backgroundColor: theme?.container,
+                            color: theme?.onContainer,
                         }}
-                    />
-                    {calendarEvent.calendarTitle}
-                </span>
+                    >
+                        <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{
+                                backgroundColor: theme?.main,
+                            }}
+                        />
+                        {calendarEvent.calendarTitle}
+                    </span>
+
+                    <LeaveStatusBadge state={calendarEvent.approval_state} />
+                </div>
             </div>
 
             {/* Date range */}
@@ -127,6 +186,33 @@ export default function ViewEventDialog({
                     <p className="text-xs text-muted-foreground">{end.time}</p>
                 </div>
             </div>
+
+            {/* The decision, for whoever has the permission and nobody else.
+                Approving here acts on the entire filing, so it cannot leave a
+                multi-day request half-decided the way deciding one visible
+                segment would. */}
+            {canDecide && (
+                <div className="mx-5 mb-4 flex items-center justify-between gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Filed and not yet reviewed.
+                    </p>
+
+                    <Button
+                        size="sm"
+                        onClick={handleApprove}
+                        disabled={approving}
+                    >
+                        {approving ? (
+                            'Approving...'
+                        ) : (
+                            <>
+                                <BadgeCheck size={13} className="mr-1" />{' '}
+                                Approve
+                            </>
+                        )}
+                    </Button>
+                </div>
+            )}
 
             {/* Footer */}
             <div className="flex items-center justify-between border-t px-5 py-3.5">

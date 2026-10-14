@@ -52,6 +52,41 @@ export function formatDate(value: string | null | undefined) {
 }
 
 /**
+ * How far off the planned return an actual return was.
+ *
+ * The two times are the whole point of the travel panel, and a bare pair of
+ * timestamps makes the reader do the subtraction. Rounded to the minute
+ * because nobody is reporting a return to the second.
+ */
+export function describeArrivalDelta(
+    expected: string | null,
+    actual: string | null,
+) {
+    if (!expected || !actual) {
+        return null;
+    }
+
+    const minutes = Math.round(
+        (parseISO(actual).getTime() - parseISO(expected).getTime()) / 60000,
+    );
+
+    if (minutes === 0) {
+        return { late: false, label: 'on time' };
+    }
+
+    const span =
+        Math.abs(minutes) < 60
+            ? `${Math.abs(minutes)} min`
+            : `${(Math.abs(minutes) / 60).toFixed(
+                  Math.abs(minutes) % 60 === 0 ? 0 : 1,
+              )} hr`;
+
+    return minutes > 0
+        ? { late: true, label: `${span} late` }
+        : { late: false, label: `${span} early` };
+}
+
+/**
  * Tailwind classes for a status pill.
  *
  * Kept as class strings rather than Badge variants because the tone has to be
@@ -71,6 +106,56 @@ export const STATUS_BORDER: Record<PassSlipStatus, string> = {
 };
 
 /**
+ * What a slip looks like, which is not quite what it is.
+ *
+ * A slip is decided in one axis (pending/approved/declined) and completes its
+ * life in another (did the person come back). Both matter to somebody scanning
+ * a list, so the colour is derived from the pair rather than from the decision
+ * alone — an approved slip that is still out is a different thing from one whose
+ * personnel is back at their desk, and both are "approved" in the queue's
+ * filter.
+ */
+export type PassSlipVisualState = PassSlipStatus | 'arrived';
+
+export function slipVisualState(slip: PassSlipView): PassSlipVisualState {
+    // A declined slip keeps its rejection colour whatever `actual_arrival` says:
+    // a return time on a slip that was never granted is a correction, not a
+    // completed trip.
+    if (slip.status === 'approved' && slip.actual_arrival) {
+        return 'arrived';
+    }
+
+    return slip.status;
+}
+
+export const VISUAL_TONE: Record<PassSlipVisualState, string> = {
+    ...STATUS_TONE,
+    arrived: 'text-sky-600 dark:text-sky-400 bg-sky-500/10',
+};
+
+export const VISUAL_BORDER: Record<PassSlipVisualState, string> = {
+    ...STATUS_BORDER,
+    arrived: 'border-l-sky-500',
+};
+
+/**
+ * Whether a return can still be recorded against this slip.
+ *
+ * Deliberately narrower than "the officer has permission": a slip only has a
+ * return to record once it has been approved (the trip was allowed), while an
+ * expected return exists (an early-out slip is not coming back), and while one
+ * has not already been recorded. Hiding the control otherwise is better than
+ * showing a gesture that can only ever be refused.
+ */
+export function canRecordArrival(slip: PassSlipView) {
+    return (
+        slip.status === 'approved' &&
+        !slip.actual_arrival &&
+        Boolean(slip.expected_arrival)
+    );
+}
+
+/**
  * One labelled fact in a detail grid.
  *
  * A `—` is rendered explicitly rather than omitted so the grid keeps its shape
@@ -88,7 +173,7 @@ export function DetailField({
 }) {
     return (
         <div className="flex flex-col gap-0.5">
-            <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
+            <span className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {icon}
                 {label}
             </span>
@@ -135,7 +220,7 @@ export function TravelTimes({
                             // Not a gap — an early-out slip has no planned
                             // return by design, and saying so stops a reviewer
                             // reading it as an unfilled field.
-                            <span className="text-muted-foreground text-xs italic">
+                            <span className="text-xs text-muted-foreground italic">
                                 Early out — no return expected
                             </span>
                         )
@@ -148,7 +233,7 @@ export function TravelTimes({
                         actualArrival ? (
                             formatDateTime(actualArrival)
                         ) : (
-                            <span className="text-muted-foreground text-xs italic">
+                            <span className="text-xs text-muted-foreground italic">
                                 Not yet recorded
                             </span>
                         )

@@ -88,3 +88,24 @@ export const calendarConfig = {
         ...orange,
     },
 };
+
+type CalendarTheme = (typeof calendarConfig)[keyof typeof calendarConfig];
+
+/**
+ * The colour pair for a calendar id, or undefined for one this theme set does
+ * not define.
+ *
+ * A lookup rather than a bare index because the id comes off an event the grid
+ * is holding, and an unrecognised leave type should render without a colour
+ * rather than crash the page — an unknown type is a data problem, not a reason
+ * the calendar stops drawing.
+ */
+export function calendarThemeFor(
+    id?: string | null,
+): CalendarTheme | undefined {
+    if (!id) {
+        return undefined;
+    }
+
+    return (calendarConfig as Record<string, CalendarTheme>)[id];
+}
