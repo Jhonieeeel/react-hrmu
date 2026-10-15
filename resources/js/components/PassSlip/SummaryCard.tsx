@@ -1,4 +1,5 @@
 import {
+    BadgeCheck,
     BriefcaseBusiness,
     CalendarClock,
     CheckCircle2,
@@ -9,6 +10,7 @@ import {
     MapPin,
     PenLine,
     Stamp,
+    Ticket,
     UserRound,
     XCircle,
 } from 'lucide-react';
@@ -24,12 +26,14 @@ import {
     DetailField,
     formatDate,
     formatDateTime,
+    formatTime,
     slipVisualState,
     TravelTimes,
     VISUAL_BORDER,
     VISUAL_TONE,
 } from './fields';
 import type { PassSlipView } from './fields';
+import type { ComponentType } from 'react';
 
 /**
  * The read view of a single pass slip, shared by both screens.
@@ -89,20 +93,20 @@ export function SummaryCard({
                 className="w-full px-5 py-4 text-left transition-colors hover:bg-muted/40"
                 aria-label="Toggle slip details"
             >
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex min-w-0 flex-col gap-1">
-                        {showOutcomeFirst ? (
+                {showOutcomeFirst ? (
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 flex-col gap-1">
                             <OutcomeLead slip={slip} />
-                        ) : (
-                            <RequestLead slip={slip} />
-                        )}
-                    </div>
+                        </div>
 
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                        <TypeBadge slip={slip} />
-                        <StatusPill slip={slip} />
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                            <TypeBadge slip={slip} />
+                            <StatusPill slip={slip} />
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <RequestLead slip={slip} />
+                )}
             </CollapsibleTrigger>
 
             <CollapsibleContent className="border-t">
@@ -175,18 +179,106 @@ export function SummaryCard({
     );
 }
 
+/**
+ * The review queue's collapsed header.
+ *
+ * A labelled two-column field grid rather than the three stacked lines the
+ * employee's screen uses, because the two are answering different questions.
+ * "My slips" is read by one person who wants the answer — the destination, then
+ * what happened. The queue is scanned by an officer comparing twenty slips at
+ * once, who needs to pick out *which* rows to open: who it is, when they are
+ * leaving, whether it is already decided. Without labels that comparison is a
+ * guessing game, because a bare "8:30 AM" in a stack of prose is not findable by
+ * the eye.
+ *
+ * Reading order is row-wise — name against departure, purpose against type,
+ * destination against status — so each pair answers one question about one slip.
+ */
 function RequestLead({ slip }: { slip: PassSlipView }) {
     return (
-        <>
-            <span className="truncate font-medium">{slip.destination}</span>
-            <span className="line-clamp-1 text-xs text-muted-foreground">
-                {slip.purpose}
+        <div className="w-full space-y-3">
+            <div className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+                <HeaderField label="Name" icon={UserRound}>
+                    <span className="flex flex-col">
+                        <span className="truncate">
+                            {slip.printed_name ?? 'Unknown'}
+                        </span>
+                        <span className="truncate text-xs text-muted-foreground">
+                            {[slip.position, slip.usd]
+                                .filter(Boolean)
+                                .join(' · ') || '—'}
+                        </span>
+                    </span>
+                </HeaderField>
+
+                <HeaderField label="Departure time" icon={Clock}>
+                    <span title={formatDateTime(slip.expected_departure)}>
+                        {formatTime(slip.expected_departure)}
+                    </span>
+                </HeaderField>
+
+                <HeaderField label="Purpose" icon={FileText}>
+                    <span
+                        className="line-clamp-1"
+                        title={slip.purpose}
+                    >
+                        {slip.purpose}
+                    </span>
+                </HeaderField>
+
+                <HeaderField label="Request type" icon={Ticket}>
+                    <TypeBadge slip={slip} />
+                </HeaderField>
+
+                <HeaderField label="Destination" icon={MapPin}>
+                    <span className="line-clamp-1" title={slip.destination}>
+                        {slip.destination}
+                    </span>
+                </HeaderField>
+
+                <HeaderField label="Status" icon={BadgeCheck}>
+                    <StatusPill slip={slip} />
+                </HeaderField>
+            </div>
+
+            {/* The filed date is metadata, not something to decide on, so it sits
+                under the grid as a footnote rather than taking a cell that a
+                decision-maker would scan past. "Date requested" is the filed
+                date; "Date accomplished" stays in the panel below, since two
+                dates side by side in a header would invite reading the wrong one
+                as the departure. */}
+            <p className="text-xs text-muted-foreground">
+                Filed {formatDate(slip.date_requested)}
+            </p>
+        </div>
+    );
+}
+
+/**
+ * One labelled cell of the review header.
+ *
+ * A plain label above a value rather than the icon-led layout `DetailField`
+ * uses: the icons already repeat between the six cells and at this density they
+ * turn into noise, whereas the label is the thing being scanned for.
+ */
+function HeaderField({
+    label,
+    icon: Icon,
+    children,
+}: {
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="flex items-center gap-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                <Icon className="size-3" />
+                {label}
             </span>
-            <span className="text-xs text-muted-foreground">
-                {slip.printed_name ?? 'Unknown'} ·{' '}
-                {formatDate(slip.date_requested)}
-            </span>
-        </>
+
+            <span className="min-w-0 text-sm font-medium">{children}</span>
+        </div>
     );
 }
 

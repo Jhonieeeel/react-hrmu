@@ -52,6 +52,22 @@ export function formatDate(value: string | null | undefined) {
 }
 
 /**
+ * The clock time alone, for the review card header.
+ *
+ * A full timestamp there would repeat the slip's own date on every row of a
+ * page of cards, so the header shows only the hour and minute and puts the exact
+ * datetime in the field's tooltip — the date is a few pixels away in the panel
+ * below for anyone who needs it.
+ */
+export function formatTime(value: string | null | undefined) {
+    if (!value) {
+        return '—';
+    }
+
+    return format(parseISO(value), 'h:mm a');
+}
+
+/**
  * How far off the planned return an actual return was.
  *
  * The two times are the whole point of the travel panel, and a bare pair of
