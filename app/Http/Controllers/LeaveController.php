@@ -91,10 +91,6 @@ class LeaveController extends Controller
         $employee = $this->resolveEmployee($leaveData->employee_id);
         $leaveData->employee_id = $employee->id;
 
-        // Whoever decides on filings is treated as having decided on this one —
-        // see filesAsApproval().
-        $autoApprove = $this->filesAsApproval();
-
         $weekdays = $checkDateRangeAction->checkDateRange($leaveData);
 
         if ($weekdays === []) {
@@ -108,36 +104,20 @@ class LeaveController extends Controller
                 ->with('error', 'The selected range contains no working days.');
         }
 
-        $action->createLeaves($weekdays, $leaveData, requiresApproval: ! $autoApprove);
+        // Every filing waits for a decision, whoever files it.
+        //
+        // An earlier version treated a filing by someone holding ReviewLeave as
+        // their own approval. That was wrong: the paper record HR works from
+        // still has to be approved by a person, so those requests were being
+        // recorded as approved without anyone having agreed to them. Holders of
+        // the permission now use ChangeLeaveStatusAction to move a request once
+        // they have actually decided on it.
+        $action->createLeaves($weekdays, $leaveData, requiresApproval: true);
 
         return back()->with('success', [
-            // The message has to match what actually happened, otherwise an
-            // admin files leave and is told to wait for a queue that will never
-            // show the request.
-            'message' => $autoApprove
-                ? 'Leave filed and approved.'
-                : 'Leave filed successfully and is awaiting approval.',
+            'message' => 'Leave filed successfully and is awaiting approval.',
             'id' => Str::uuid(),
         ]);
-    }
-
-    /**
-     * Whether a filing by the current user counts as already approved.
-     *
-     * Anyone holding ReviewLeave is the person who decides on filings, so a
-     * request they record — for themselves or on an employee's behalf — is not
-     * queued for someone else to decide. Super-admin satisfies this through the
-     * Gate::before hook.
-     *
-     * This deliberately does not distinguish whose record was filed against.
-     * HR entering leave for an employee is treated as HR having approved it,
-     * which means nothing recorded by a reviewer reaches the queue. That is the
-     * business rule as specified; the trade-off is that the queue only ever
-     * holds filings from users without ReviewLeave.
-     */
-    protected function filesAsApproval(): bool
-    {
-        return auth()->user()->can(Permission::ReviewLeave);
     }
 
     /**

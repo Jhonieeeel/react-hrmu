@@ -89,6 +89,25 @@ class LeavePolicy
     }
 
     /**
+     * Can the user move this filing to a different approval state?
+     *
+     * Deliberately *not* gated on `reviewed_at`, unlike review(). This is the
+     * correction path: a request that was already approved or rejected can be
+     * moved, because the paper record and the screen are expected to disagree
+     * and somebody has to be able to reconcile them. The only two conditions are
+     * that the row is a filing that actually has a state to change, and that the
+     * caller is somebody who decides on filings at all.
+     *
+     * Every move is recorded in leave_status_changes, so an override leaves a
+     * trail rather than quietly rewriting history.
+     */
+    public function changeStatus(User $user, Leave $leave): bool
+    {
+        return $leave->requiresApproval()
+            && $user->can(Permission::ReviewLeave);
+    }
+
+    /**
      * Can the user add an accrual or adjustment to this employee's ledger?
      */
     public function adjust(User $user, Employee $employee): bool

@@ -4,6 +4,8 @@ import { format, parseISO } from 'date-fns';
 import { CheckCircle2, ClipboardCheck, Plane, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import PaginationButton from '@/components/Leave/PaginationButton';
+import type { LeaveStatus } from '@/components/Leave/StatusEditor';
+import { StatusEditor } from '@/components/Leave/StatusEditor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -410,7 +412,11 @@ function ReviewRow({
 
             <TableCell className="text-right">
                 {status !== 'pending' ? (
-                    <DecisionSummary request={request} status={status} />
+                    <DecisionSummary
+                        request={request}
+                        status={status}
+                        canReview={canReview}
+                    />
                 ) : !groupId ? (
                     <span
                         className="text-muted-foreground text-xs"
@@ -452,19 +458,27 @@ function ReviewRow({
 }
 
 /**
- * Read-only outcome column for a request that has already been decided.
+ * Outcome column for a request that has already been decided, with the control
+ * to amend that decision.
+ *
+ * Not read-only any more: the paper record and this screen are expected to
+ * disagree, so somebody holding ReviewLeave needs a way to move a request that
+ * was recorded as decided wrongly. The trail of earlier decisions lives on the
+ * server.
  */
 function DecisionSummary({
     request,
     status,
+    canReview,
 }: {
     request: LeaveRequest;
     status: string;
+    canReview: boolean;
 }) {
     const approved = status === 'approved';
 
     return (
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex flex-col items-end gap-1.5">
             <span
                 className={`inline-flex items-center gap-1 text-sm font-medium capitalize ${
                     approved
@@ -491,6 +505,13 @@ function DecisionSummary({
                 <span className="text-muted-foreground max-w-56 text-xs italic">
                     “{request.review_remarks}”
                 </span>
+            )}
+
+            {canReview && (
+                <StatusEditor
+                    filingGroupId={request.filing_group_id}
+                    status={status as LeaveStatus}
+                />
             )}
         </div>
     );

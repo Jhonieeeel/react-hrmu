@@ -70,8 +70,10 @@ export default function LeaveFormDialog({
 
         form.transform((data) => ({
             ...data,
+            // Kept in step with LeaveForm: a cto and an offset are filed under
+            // their own tag, not collapsed into "leave".
             event_tag: ['cto', 'offset'].includes(form.data.leave_type)
-                ? 'cto'
+                ? form.data.leave_type
                 : 'leave',
         }));
 

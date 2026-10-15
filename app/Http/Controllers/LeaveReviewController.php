@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Leave\ChangeLeaveStatusAction;
 use App\Actions\Leave\PendingReviewAction;
 use App\Actions\Leave\ReviewLeaveAction;
+use App\Models\Leave;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -101,6 +104,43 @@ class LeaveReviewController extends Controller
             $updated > 0
                 ? "Rejected {$summary}."
                 : 'That request has already been reviewed.'
+        );
+    }
+
+    /**
+     * Moves an already-filed request to a different approval state.
+     *
+     * Separate from approve/reject because those only act on a request nobody
+     * has answered yet. This one is the correction path — an approved request
+     * that should not have been, a rejected one that was right after all, or one
+     * that has to go back to pending for another decision. Every move is written
+     * to leave_status_changes, so the earlier decision stays on the record.
+     */
+    public function changeStatus(Request $request, string $filingGroup, ChangeLeaveStatusAction $change): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', Rule::in(ChangeLeaveStatusAction::STATUSES)],
+            // Matching reject(): a request sent back with no explanation leaves
+            // the employee unable to tell what to do about it. Moves to approved
+            // or pending stay optional.
+            'review_remarks' => [
+                'required_if:status,'.Leave::STATUS_REJECTED,
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+        ]);
+
+        $summary = $change->describe($filingGroup);
+        $status = $validated['status'];
+        $updated = $change->change($filingGroup, $request->user(), $status, $validated['review_remarks'] ?? null);
+
+        return $this->respond(
+            $request,
+            $updated,
+            $updated > 0
+                ? sprintf('Marked %s as %s.', $summary, $status)
+                : 'That request cannot be changed.'
         );
     }
 

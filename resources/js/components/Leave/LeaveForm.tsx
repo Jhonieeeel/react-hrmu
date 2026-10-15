@@ -58,8 +58,13 @@ export default function LeaveForm({ user, date }: FormProp) {
 
         form.transform((data) => ({
             ...data,
+            // cto and offset are filed under their own tag rather than being
+            // folded into "leave": both are in FILED_LEAVE_TAGS, so tagging an
+            // offset as "leave" (or as "cto") loses which credit was spent — the
+            // tag is what the review queue, the history filter and the calendar
+            // all key off.
             event_tag: ['cto', 'offset'].includes(form.data.leave_type)
-                ? 'cto'
+                ? form.data.leave_type
                 : form.data.event_tag,
             leave_type:
                 form.data.event_tag === 'absent'

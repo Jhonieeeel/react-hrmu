@@ -20,6 +20,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { StatusEditor } from '@/components/Leave/StatusEditor';
 import { usePermissions } from '@/hooks/use-permissions';
 import calendar from '@/routes/calendar';
 import leaveReviews from '@/routes/leave-reviews';
@@ -99,6 +100,17 @@ export default function ViewEventDialog({
         canReviewLeave &&
         resolveStatus(calendarEvent.approval_state) === 'pending' &&
         Boolean(calendarEvent.filing_group_id);
+
+    /**
+     * Whether this request can have its status amended.
+     *
+     * Offered on every state rather than only the decided ones, because the
+     * case this exists for is a request that was recorded as approved when it
+     * should not have been — which can only be fixed by somebody who already
+     * decided it.
+     */
+    const canEditStatus =
+        canReviewLeave && Boolean(calendarEvent.filing_group_id);
 
     const [approving, setApproving] = useState(false);
 
@@ -211,6 +223,32 @@ export default function ViewEventDialog({
                             </>
                         )}
                     </Button>
+                </div>
+            )}
+
+            {/* The amendment control, for a request that has already been
+                decided. Kept separate from the panel above so "decide this" and
+                "correct a decision already recorded" never read as the same
+                action. */}
+            {!canDecide && canEditStatus && (
+                <div className="mx-5 mb-4 flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+                    <p className="text-muted-foreground text-xs">
+                        Recorded as{' '}
+                        <span className="font-medium capitalize">
+                            {resolveStatus(calendarEvent.approval_state)}
+                        </span>
+                        . Change it if that does not match the paper record.
+                    </p>
+
+                    <StatusEditor
+                        filingGroupId={
+                            calendarEvent.filing_group_id as string | null
+                        }
+                        status={resolveStatus(
+                            calendarEvent.approval_state,
+                        )}
+                        onDone={() => onOpenChange(false)}
+                    />
                 </div>
             )}
 

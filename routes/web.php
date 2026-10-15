@@ -56,6 +56,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('data/leave-reviews', [LeaveReviewController::class, 'data'])->name('leave-reviews.data');
         Route::post('leave-reviews/{filingGroup}/approve', [LeaveReviewController::class, 'approve'])->name('leave-reviews.approve');
         Route::post('leave-reviews/{filingGroup}/reject', [LeaveReviewController::class, 'reject'])->name('leave-reviews.reject');
+
+        // Corrections: moves a request that has already been decided to a
+        // different state, or sends it back to pending. PATCH rather than POST
+        // because it edits the existing record rather than appending a new
+        // decision, and it shares the audit trail the other two write to.
+        Route::patch('leave-reviews/{filingGroup}/status', [LeaveReviewController::class, 'changeStatus'])->name('leave-reviews.status');
     });
 
     // Organization CRUD

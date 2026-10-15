@@ -4,6 +4,7 @@ use App\Enums\Permission;
 use App\Enums\Role;
 use App\Models\Employee;
 use App\Models\Leave;
+use App\Models\LeaveStatusChange;
 use App\Models\User;
 
 function filingPayload(int $employeeId, string $start = '2023-03-06', string $end = '2023-03-08'): array
@@ -32,9 +33,8 @@ function employeeWithRecord(): array
 /**
  * Files a leave request that stays in the review queue.
  *
- * The filing has to come from the employee, not from HR: anything a user with
- * ReviewLeave records is approved on the spot, so an HR-filed request would
- * never reach the queue these tests are exercising.
+ * Filed by a plain employee: every filing waits for a decision, whoever files
+ * it, so there is no special caller needed here any more.
  *
  * @return array{0: User, 1: Employee}
  */
@@ -374,15 +374,16 @@ it('lets an HR user record an undertime adjustment', function () {
 });
 
 /*
- * Auto-approval for reviewers
+ * Every filing waits for a decision
  *
- * Whoever holds ReviewLeave is the person who decides on filings, so a request
- * they record is treated as already decided — whether it is their own leave or
- * leave they enter for an employee. These pin that, and the boundary that
- * matters just as much: holding FileLeave alone must never be enough.
+ * Earlier drafts treated a filing by someone holding ReviewLeave as that
+ * person's own approval. That was wrong — the paper record still has to be
+ * agreed to by a person, so those requests were being recorded as approved
+ * without anyone having decided them. Nobody self-approves now; holders of the
+ * permission move a request explicitly, through the status endpoint tested below.
  */
 
-it('auto-approves a reviewer filing their own leave', function () {
+it('holds a reviewer filing their own leave for approval', function () {
     $hr = userWithRole(Role::HrOfficer->value);
     $own = Employee::factory()->create(['user_id' => $hr->id]);
     $hr->setRelation('employees', collect([$own]));
@@ -390,43 +391,36 @@ it('auto-approves a reviewer filing their own leave', function () {
     $this->actingAs($hr)
         ->post(route('leaves.store'), filingPayload($own->id));
 
-    $leave = Leave::where('employee_id', $own->id)->firstOrFail();
-
-    expect($leave->isApproved())->toBeTrue()
-        ->and($leave->isPendingReview())->toBeFalse();
+    expect(Leave::where('employee_id', $own->id)->firstOrFail()->isPendingReview())->toBeTrue();
 });
 
-it('auto-approves a reviewer filing leave for an employee', function () {
+it('holds a reviewer filing leave for an employee', function () {
+    // HR entering leave for somebody is not HR approving it.
     $hr = userWithRole(Role::HrOfficer->value);
     [, $employee] = employeeWithRecord();
 
     $this->actingAs($hr)
         ->post(route('leaves.store'), filingPayload($employee->id));
 
-    $leave = Leave::where('employee_id', $employee->id)->firstOrFail();
-
-    // HR recording leave is HR approving it, so it must not land in the queue
-    // waiting on a decision nobody is going to make.
-    expect($leave->isApproved())->toBeTrue()
-        ->and($leave->isPendingReview())->toBeFalse();
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
 });
 
-it('auto-approves a super admin filing leave for an employee', function () {
+it('holds a super admin filing leave for an employee', function () {
     $admin = superAdmin();
     [, $employee] = employeeWithRecord();
 
     $this->actingAs($admin)
         ->post(route('leaves.store'), filingPayload($employee->id));
 
-    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isApproved())->toBeTrue();
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
 });
 
-it('auto-approves a reviewer filing a cto for an employee', function () {
+it('holds a reviewer filing a cto', function () {
+    // cto spends a credit rather than taking leave, but it is still a filing:
+    // only one of FILED_LEAVE_TAGS, so it waits like any other.
     $hr = userWithRole(Role::HrOfficer->value);
     [, $employee] = employeeWithRecord();
 
-    // cto is one of FILED_LEAVE_TAGS, so it would otherwise wait for approval
-    // like any other filing.
     $this->actingAs($hr)
         ->post(route('leaves.store'), [
             ...filingPayload($employee->id),
@@ -434,12 +428,24 @@ it('auto-approves a reviewer filing a cto for an employee', function () {
             'event_tag' => 'cto',
         ]);
 
-    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isApproved())->toBeTrue();
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
 });
 
-it('still holds a plain employee filing to the review queue', function () {
-    // The counterpart to the rules above: holding FileLeave alone must not be
-    // enough, or every employee would self-approve.
+it('holds a reviewer filing an offset', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = employeeWithRecord();
+
+    $this->actingAs($hr)
+        ->post(route('leaves.store'), [
+            ...filingPayload($employee->id),
+            'leave_type' => 'offset',
+            'event_tag' => 'offset',
+        ]);
+
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
+});
+
+it('holds a plain employee filing', function () {
     [$user, $employee] = employeeWithRecord();
 
     $this->actingAs($user)
@@ -448,34 +454,204 @@ it('still holds a plain employee filing to the review queue', function () {
     expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
 });
 
-it('reports the outcome that actually happened for a reviewer filing', function () {
+it('tells every filer the request is awaiting approval', function () {
+    // One message for every role now that there is no auto-approve branch to
+    // describe. Telling an admin a request is approved when it is not sends
+    // someone hunting a queue entry that is not there.
     $hr = userWithRole(Role::HrOfficer->value);
     [, $employee] = employeeWithRecord();
 
-    // Telling an admin to wait for approval of a request that is already
-    // approved is the kind of message that sends someone hunting the queue.
     $this->actingAs($hr)
-        ->post(route('leaves.store'), filingPayload($employee->id))
-        ->assertSessionHas('success.message', 'Leave filed and approved.');
-});
-
-it('keeps the awaiting-approval message for a plain employee filing', function () {
-    [$user, $employee] = employeeWithRecord();
-
-    $this->actingAs($user)
         ->post(route('leaves.store'), filingPayload($employee->id))
         ->assertSessionHas('success.message', 'Leave filed successfully and is awaiting approval.');
 });
 
-it('keeps a plain employee filing off the auto-approve path even when they file for themselves', function () {
-    // Guards the permission boundary specifically: an employee who somehow
-    // targets their own record still goes to the queue.
+it('never lets a filing carry an approved status through the payload', function () {
+    // `status` is on the DTO, so a crafted payload could try to post it as
+    // approved. The action writes the column itself, so the request value is
+    // ignored — asserted because the field is still accepted from the client,
+    // and that is the sort of thing that quietly comes back to life.
     [$user, $employee] = employeeWithRecord();
 
     $this->actingAs($user)
-        ->post(route('leaves.store'), filingPayload($employee->id));
+        ->post(route('leaves.store'), [
+            ...filingPayload($employee->id),
+            'status' => true,
+        ]);
 
-    expect(Leave::where('employee_id', $employee->id)->where('status', false)->exists())->toBeTrue();
+    expect(Leave::where('employee_id', $employee->id)->firstOrFail()->isPendingReview())->toBeTrue();
+});
+
+/*
+ * Correcting a status after the fact
+ *
+ * The paper record and the screen are expected to disagree: some requests were
+ * recorded as approved without anyone having agreed to them, and somebody has to
+ * be able to move them. Anyone holding ReviewLeave can, every move is written to
+ * an audit trail, and nobody else can touch them.
+ */
+
+it('lets a reviewer move an already approved request back to pending', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)->post(route('leave-reviews.approve', $groupId));
+
+    $this->actingAs($hr)
+        ->patch(route('leave-reviews.status', $groupId), ['status' => 'pending']);
+
+    $leave = Leave::where('filing_group_id', $groupId)->firstOrFail();
+
+    expect($leave->isPendingReview())->toBeTrue()
+        // scopePendingReview() reads whereNull('reviewed_at'), so a row cleared
+        // only on the boolean would drop out of the queue while still reading
+        // as approved.
+        ->and($leave->reviewed_at)->toBeNull()
+        ->and($leave->reviewed_by)->toBeNull();
+});
+
+it('lets a reviewer reject a request that was approved', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)->post(route('leave-reviews.approve', $groupId));
+
+    $this->actingAs($hr)->patch(route('leave-reviews.status', $groupId), [
+        'status' => 'rejected',
+        'review_remarks' => 'Not approved on the paper record',
+    ]);
+
+    expect(Leave::where('filing_group_id', $groupId)->firstOrFail()->isRejected())->toBeTrue();
+});
+
+it('keeps a correction on the audit trail with who and when', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)->post(route('leave-reviews.approve', $groupId));
+
+    $this->actingAs($hr)->patch(route('leave-reviews.status', $groupId), ['status' => 'pending']);
+
+    // The `leaves` row only holds the current decision, so the trail is the only
+    // record that the request was ever approved.
+    $change = LeaveStatusChange::where('filing_group_id', $groupId)->firstOrFail();
+
+    expect($change->from_status)->toBe('approved')
+        ->and($change->to_status)->toBe('pending')
+        ->and($change->user_id)->toBe($hr->id)
+        ->and($change->created_at)->not->toBeNull();
+});
+
+it('records one audit entry per filing rather than one per ledger row', function () {
+    // Mar 9-13 2023 spans a weekend, so the submission is stored as two
+    // segments. Moving it is one decision by one person.
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave('2023-03-09', '2023-03-13');
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    expect(Leave::where('filing_group_id', $groupId)->count())->toBe(2);
+
+    $this->actingAs($hr)->patch(route('leave-reviews.status', $groupId), ['status' => 'approved']);
+
+    expect(LeaveStatusChange::where('filing_group_id', $groupId)->count())->toBe(1);
+
+    // Both segments move, so the filing is never left half-decided.
+    foreach (Leave::where('filing_group_id', $groupId)->get() as $leave) {
+        expect($leave->isApproved())->toBeTrue();
+    }
+});
+
+it('keeps the previous reviewer note when a correction carries no new one', function () {
+    // Overwriting an explanation with a blank would destroy the record of why
+    // something was decided the first time.
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)->post(route('leave-reviews.reject', $groupId), [
+        'review_remarks' => 'No balance left',
+    ]);
+
+    $this->actingAs($hr)->patch(route('leave-reviews.status', $groupId), ['status' => 'approved']);
+
+    expect(Leave::where('filing_group_id', $groupId)->firstOrFail()->review_remarks)
+        ->toBe('No balance left');
+});
+
+it('requires a reason when a correction rejects the request', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)
+        ->patch(route('leave-reviews.status', $groupId), ['status' => 'rejected'])
+        ->assertSessionHasErrors('review_remarks');
+});
+
+it('refuses a status outside the three the queue knows', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)
+        ->patch(route('leave-reviews.status', $groupId), ['status' => 'deleted'])
+        ->assertSessionHasErrors('status');
+});
+
+it('refuses a status change from somebody without the review permission', function () {
+    // The correction path stays behind the same permission as deciding;
+    // otherwise any employee could approve their own leave.
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($employee->user)
+        ->patch(route('leave-reviews.status', $groupId), ['status' => 'approved'])
+        ->assertForbidden();
+
+    expect(Leave::where('filing_group_id', $groupId)->firstOrFail()->isPendingReview())->toBeTrue();
+});
+
+it('ignores a status change on an unknown filing group', function () {
+    $hr = userWithRole(Role::HrOfficer->value);
+
+    $this->actingAs($hr)
+        ->patch(route('leave-reviews.status', 'does-not-exist'), ['status' => 'approved']);
+
+    expect(LeaveStatusChange::where('filing_group_id', 'does-not-exist')->count())->toBe(0);
+});
+
+it('moves the request between the queue tabs', function () {
+    // The point of the feature: correcting a status has to actually move the row
+    // between buckets, or the tabs would disagree with the ledger.
+    $hr = userWithRole(Role::HrOfficer->value);
+    [, $employee] = filePendingLeave();
+
+    $groupId = Leave::where('employee_id', $employee->id)->value('filing_group_id');
+
+    $this->actingAs($hr)->patch(route('leave-reviews.status', $groupId), ['status' => 'approved']);
+
+    $this->actingAs($hr)
+        ->getJson(route('leave-reviews.data', ['status' => 'pending']))
+        ->assertJsonCount(0, 'requests.data')
+        ->assertJsonPath('counts.approved', 1);
+
+    $this->actingAs($hr)->patch(route('leave-reviews.status', $groupId), ['status' => 'pending']);
+
+    $this->actingAs($hr)
+        ->getJson(route('leave-reviews.data', ['status' => 'pending']))
+        ->assertJsonCount(1, 'requests.data')
+        ->assertJsonPath('counts.approved', 0);
 });
 
 /*
