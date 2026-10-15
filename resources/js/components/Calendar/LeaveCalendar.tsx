@@ -13,7 +13,7 @@ import 'temporal-polyfill/global';
 import { calendarConfig, calendarThemeFor } from './config/colors';
 import CustomEventModal from './CustomEventModal';
 import LeaveFormDialog from './LeaveFormDialog';
-import { withStatusMarker } from './LeaveStatus';
+import { monthGridContent } from './LeaveStatus';
 
 type PageProps = {
     users: User[];
@@ -79,16 +79,19 @@ export default function LeaveCalendar({ users }: PageProps) {
         if (calendarEvents && calendarEvents.length > 0) {
             const formatted = calendarEvents.map((event: EventProp) => ({
                 ...event,
-                // The grid renders the title as plain text, so both the decision
-                // marker and the compact name have to be carried in the string
-                // itself — otherwise a month view would show an undecided filing
-                // exactly like an approved one, in a name too long to fit a cell.
-                title: withStatusMarker(
-                    event.calendarId === 'holiday'
-                        ? event.title
-                        : compactName(event.title),
-                    event.approval_state,
-                ),
+                // The compact name keeps the compact name fitting a cell, and the
+                // month grid is handed its own content markup so the decision
+                // marker can be a Lucide icon rather than a character jammed
+                // into the title — otherwise a month view would show an
+                // undecided filing exactly like an approved one.
+                _customContent: {
+                    monthGrid: monthGridContent(
+                        event.calendarId === 'holiday'
+                            ? event.title
+                            : compactName(event.title),
+                        event.approval_state,
+                    ),
+                },
                 start: Temporal.PlainDate.from(event.start),
                 end: Temporal.PlainDate.from(event.end),
             }));

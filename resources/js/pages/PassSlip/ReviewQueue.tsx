@@ -6,6 +6,7 @@ import {
     PencilLine,
     Search,
     Stamp,
+    Timer,
     X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -530,11 +531,34 @@ function TravelTimesEditor({
                     <label className="text-xs font-medium">
                         Actual time of arrival
                     </label>
-                    <Input
-                        type="datetime-local"
-                        value={arrival}
-                        onChange={(event) => setArrival(event.target.value)}
-                    />
+
+                    {/* The picker is for a slip that was filled in later or
+                        corrected after the fact. The common case is the
+                        personnel walking in the door right now, and nobody
+                        should have to key in the minute they happen to be
+                        standing there — so "Now" stamps the officer's own
+                        clock into the field and they can still correct it. */}
+                    <div className="flex gap-2">
+                        <Input
+                            type="datetime-local"
+                            value={arrival}
+                            onChange={(event) =>
+                                setArrival(event.target.value)
+                            }
+                        />
+
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="shrink-0"
+                            onClick={() => setArrival(nowAsDatetimeLocal())}
+                            title="Use the current date and time"
+                        >
+                            <Timer className="size-3.5" />
+                            Now
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -570,6 +594,18 @@ function TravelTimesEditor({
  */
 function toDatetimeLocal(value: string | null) {
     return value ? value.slice(0, 16) : '';
+}
+
+/**
+ * The officer's current wall-clock time, in the format a datetime-local input
+ * expects: `YYYY-MM-DDTHH:mm`.
+ *
+ * Local rather than UTC because the officer is reading this off the same wall
+ * clock as the field, and the value is only saved once they press Save — the
+ * server still validates and stores it as submitted.
+ */
+function nowAsDatetimeLocal() {
+    return format(new Date(), "yyyy-MM-dd'T'HH:mm");
 }
 
 function EmptyState({ searching }: { searching: boolean }) {

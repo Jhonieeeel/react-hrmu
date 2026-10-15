@@ -1,4 +1,6 @@
-import { CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Check, CheckCircle2, Clock, X, XCircle } from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import type { ComponentType } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -9,14 +11,16 @@ export type LeaveApprovalState = 'pending' | 'approved' | 'rejected';
 type StatusMeta = {
     label: string;
     /**
-     * A text glyph rather than a component.
+     * Two icons, not one.
      *
-     * The month grid paints nothing but the event title — there is no slot for
-     * an icon node — so the marker has to survive being rendered as a string.
-     * The React icon below is for everywhere else.
+     * `icon` is the badge-sized one, drawn inside an outlined pill next to a
+     * label. `markerIcon` is the one that goes in a month cell, where the whole
+     * event is about 12px tall: at that size a circled variant closes up into a
+     * blob and the distinction between "approved" and "rejected" is lost, so the
+     * bare strokes read better.
      */
-    glyph: string;
-    icon: ComponentType<{ className?: string }>;
+    icon: ComponentType<LucideProps>;
+    markerIcon: ComponentType<LucideProps>;
     tone: string;
 };
 
@@ -31,20 +35,20 @@ type StatusMeta = {
 export const LEAVE_STATUS: Record<LeaveApprovalState, StatusMeta> = {
     pending: {
         label: 'Awaiting approval',
-        glyph: '⏳',
         icon: Clock,
+        markerIcon: Clock,
         tone: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300',
     },
     approved: {
         label: 'Approved',
-        glyph: '✅',
         icon: CheckCircle2,
+        markerIcon: Check,
         tone: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300',
     },
     rejected: {
         label: 'Rejected',
-        glyph: '⛔',
         icon: XCircle,
+        markerIcon: X,
         tone: 'border-destructive/30 bg-destructive/10 text-destructive',
     },
 };
@@ -58,14 +62,82 @@ export function resolveStatus(state?: LeaveApprovalState): LeaveApprovalState {
 }
 
 /**
- * The title as the grid has to render it.
+ * The Lucide icon, rendered once per status to static markup.
  *
- * Prefixed rather than suffixed because a month grid truncates from the right,
- * so a trailing marker is the first thing to be cut off — which would defeat
- * the point of adding it.
+ * The month grid takes its event content as an HTML string, not as React nodes,
+ * so an icon component cannot be handed to it directly. Rendering the real
+ * Lucide component to markup rather than hand-copying its path data means the
+ * glyph here is the same glyph the badges use, and stays that way across a
+ * Lucide upgrade.
+ *
+ * Memoised because the same three strings are asked for on every render of the
+ * event list, and the result is constant for the life of the page.
  */
-export function withStatusMarker(title: string, state?: LeaveApprovalState) {
-    return `${LEAVE_STATUS[resolveStatus(state)].glyph} ${title}`;
+const MARKER_MARKUP: Record<LeaveApprovalState, string> = {
+    pending: markerFor('pending'),
+    approved: markerFor('approved'),
+    rejected: markerFor('rejected'),
+};
+
+function markerFor(state: LeaveApprovalState): string {
+    const Icon = LEAVE_STATUS[state].markerIcon;
+
+    return renderToStaticMarkup(
+        <Icon
+            className="shrink-0"
+            // Month cells run at 12–14px; the icon is sized against the text so
+            // it keeps the same optical weight in both themes.
+            size={14}
+            strokeWidth={2.5}
+            aria-hidden
+        />,
+    );
+}
+
+/**
+ * The month grid's contents for one event: a Lucide status icon, then the title.
+ *
+ * Supplying this replaces the grid's own rendering entirely (see ScheduleX's
+ * month grid event, which skips its default title when custom content is set),
+ * * so the layout has to be rebuilt here* — the same row-flex, the same clipping
+ * at the right edge, or the title would wrap and push the event out of its cell.
+ *
+ * The title is escaped: this string reaches the grid through `innerHTML`, and
+ * it carries personnel names and leave purposes straight from the database.
+ */
+export function monthGridContent(
+    title: string,
+    state?: LeaveApprovalState,
+): string {
+    const markup = MARKER_MARKUP[resolveStatus(state)];
+
+    return [
+        '<div class="flex min-w-0 items-center gap-1">',
+        // Slightly transparent so the icon reads as a marker beside the name
+        // rather than as the first character of it.
+        `<span class="flex shrink-0 opacity-70">${markup}</span>`,
+        `<span class="truncate">${escapeHtml(title)}</span>`,
+        '</div>',
+    ].join('');
+}
+
+/**
+ * Escapes the five characters that can break out of text content or an
+ * attribute. Ampersand first, or it would double-escape the entities produced
+ * after it.
+ */
+function escapeHtml(value: string): string {
+    return value.replace(
+        /[&<>"']/g,
+        (char) =>
+            ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+            })[char] ?? char,
+    );
 }
 
 /**

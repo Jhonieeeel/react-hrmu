@@ -2,7 +2,6 @@ import { Link } from '@inertiajs/react';
 import {
     BookOpen,
     Calendar,
-    CalendarClock,
     ClipboardCheck,
     FileTextIcon,
     FolderGit2,
@@ -60,7 +59,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Calendar',
         href: calendar.index(),
-        icon: CalendarClock,
+        icon: Calendar,
     },
     {
         title: 'Filed Leaves',
