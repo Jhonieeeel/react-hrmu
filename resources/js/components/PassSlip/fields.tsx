@@ -211,21 +211,32 @@ export function TravelTimes({
     expectedDeparture,
     expectedArrival,
     actualArrival,
+    showExpectedDeparture = true,
     actions,
 }: {
     expectedDeparture: string | null;
     expectedArrival: string | null;
     actualArrival: string | null;
+    /**
+     * Whether to render the departure readout.
+     *
+     * Off where the surrounding card header already states the departure time —
+     * the field is not removed from the correction form, only from this readout,
+     * so HR can still amend it without seeing the same value printed twice.
+     */
+    showExpectedDeparture?: boolean;
     /** HR correction controls, rendered inside the panel. */
     actions?: ReactNode;
 }) {
     return (
         <div className="space-y-3 rounded-lg border p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-                <DetailField
-                    label="Expected departure"
-                    value={formatDateTime(expectedDeparture)}
-                />
+                {showExpectedDeparture && (
+                    <DetailField
+                        label="Expected departure"
+                        value={formatDateTime(expectedDeparture)}
+                    />
+                )}
 
                 <DetailField
                     label="Expected arrival"

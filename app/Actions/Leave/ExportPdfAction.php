@@ -23,12 +23,14 @@ class ExportPdfAction
             $balances = $replay['balances'];
             $events   = $replay['events'];
             $leaves   = $replay['leaves'];
+            $position = $replay['position'];
             $date = Carbon::parse($replay['date']);
 
             $activeSheet->setCellValue("A2", "As of {$date?->format('F Y')}");
 
             // name
             $activeSheet->setCellValue("B$cellStart", $name);
+            $activeSheet->setCellValue("C$cellStart", $position);
 
             $firstHalfRow  = $cellStart;
             $secondHalfRow = $cellStart;

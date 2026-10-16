@@ -51,6 +51,7 @@ export function SummaryCard({
     leading = 'request',
     travelTimesActions,
     arrivalActions,
+    arrivalSummaryActions,
     children,
     className,
 }: {
@@ -74,6 +75,15 @@ export function SummaryCard({
      * read-only version is rendered there but the gesture is not.
      */
     arrivalActions?: React.ReactNode;
+    /**
+     * The arrival readout for the collapsed card's footer bar.
+     *
+     * Rendered outside the CollapsibleTrigger rather than inside it: the trigger
+     * is a <button>, and a button nested in one is invalid HTML whose click also
+     * fires the toggle. Keeping it in a sibling bar means the officer can record
+     * a return without the card opening under them.
+     */
+    arrivalSummaryActions?: React.ReactNode;
     children?: React.ReactNode;
     className?: string;
 }) {
@@ -90,7 +100,7 @@ export function SummaryCard({
             )}
         >
             <CollapsibleTrigger
-                className="w-full px-5 py-4 text-left transition-colors hover:bg-muted/40"
+                className="w-full px-5 pt-4 pb-3 text-left transition-colors hover:bg-muted/40"
                 aria-label="Toggle slip details"
             >
                 {showOutcomeFirst ? (
@@ -109,61 +119,107 @@ export function SummaryCard({
                 )}
             </CollapsibleTrigger>
 
+            {/* The filed date and the arrival control, below the trigger rather
+                than inside it — see arrivalSummaryActions above.
+
+                Review-queue cards only: the employee's own screen leads with the
+                outcome and already states when it was filed, so a second date
+                line there would just repeat it. */}
+            {!showOutcomeFirst && (
+                <div className="flex flex-wrap items-center justify-between gap-2 px-5 pb-4">
+                    <p className="text-xs text-muted-foreground">
+                        Filed {formatDate(slip.date_requested)}
+                    </p>
+
+                    {arrivalSummaryActions}
+                </div>
+            )}
+
             <CollapsibleContent className="border-t">
                 <CardContent className="space-y-5 px-5 py-4">
-                    {/* The detail grid mirrors the physical form's field order,
-                        so what HR reads here is the form in the same sequence. */}
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    {/* Only what the collapsed header does not already show.
+
+                        On the review queue the header carries name, purpose,
+                        destination, departure time, request type, status and the
+                        filed date, so repeating them here would make expanding a
+                        card tell the officer nothing they had not just read. The
+                        date actually being taken is the one field the header has
+                        no room for.
+
+                        The employee's own screen keeps the full grid: its header
+                        leads with the outcome and shows almost none of these, so
+                        dropping them there would remove information rather than
+                        duplication. */}
+                    {showOutcomeFirst ? (
+                        <>
+                            {/* The detail grid mirrors the physical form's field
+                                order, so what the filer reads here is the form in
+                                the same sequence. */}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <DetailField
+                                    label="Date accomplished"
+                                    value={formatDate(slip.date_accomplished)}
+                                    icon={<Stamp className="size-3" />}
+                                />
+
+                                <DetailField
+                                    label="Date requested"
+                                    value={formatDate(slip.date_requested)}
+                                    icon={<CalendarClock className="size-3" />}
+                                />
+
+                                <DetailField
+                                    label="Destination"
+                                    value={slip.destination}
+                                    icon={<MapPin className="size-3" />}
+                                />
+
+                                <DetailField
+                                    label="Personnel"
+                                    value={
+                                        <span className="flex flex-col">
+                                            <span>
+                                                {slip.printed_name ??
+                                                    'Unknown'}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {[slip.position, slip.usd]
+                                                    .filter(Boolean)
+                                                    .join(' · ')}
+                                            </span>
+                                        </span>
+                                    }
+                                    icon={<UserRound className="size-3" />}
+                                />
+                            </div>
+
+                            <DetailField
+                                label="Purpose"
+                                value={
+                                    <span className="text-sm text-muted-foreground">
+                                        {slip.purpose}
+                                    </span>
+                                }
+                                icon={<FileText className="size-3" />}
+                            />
+                        </>
+                    ) : (
                         <DetailField
                             label="Date accomplished"
                             value={formatDate(slip.date_accomplished)}
                             icon={<Stamp className="size-3" />}
                         />
+                    )}
 
-                        <DetailField
-                            label="Date requested"
-                            value={formatDate(slip.date_requested)}
-                            icon={<CalendarClock className="size-3" />}
-                        />
-
-                        <DetailField
-                            label="Destination"
-                            value={slip.destination}
-                            icon={<MapPin className="size-3" />}
-                        />
-
-                        <DetailField
-                            label="Personnel"
-                            value={
-                                <span className="flex flex-col">
-                                    <span>
-                                        {slip.printed_name ?? 'Unknown'}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {[slip.position, slip.usd]
-                                            .filter(Boolean)
-                                            .join(' · ')}
-                                    </span>
-                                </span>
-                            }
-                            icon={<UserRound className="size-3" />}
-                        />
-                    </div>
-
-                    <DetailField
-                        label="Purpose"
-                        value={
-                            <span className="text-sm text-muted-foreground">
-                                {slip.purpose}
-                            </span>
-                        }
-                        icon={<FileText className="size-3" />}
-                    />
-
+                    {/* The planned-vs-actual pair, minus the departure the header
+                        already states. The correction form inside still offers
+                        departure as an editable control — that is an input to
+                        change a value, not a second rendering of it. */}
                     <TravelTimes
                         expectedDeparture={slip.expected_departure}
                         expectedArrival={slip.expected_arrival}
                         actualArrival={slip.actual_arrival}
+                        showExpectedDeparture={showOutcomeFirst}
                         actions={travelTimesActions}
                     />
 
@@ -240,16 +296,6 @@ function RequestLead({ slip }: { slip: PassSlipView }) {
                     <StatusPill slip={slip} />
                 </HeaderField>
             </div>
-
-            {/* The filed date is metadata, not something to decide on, so it sits
-                under the grid as a footnote rather than taking a cell that a
-                decision-maker would scan past. "Date requested" is the filed
-                date; "Date accomplished" stays in the panel below, since two
-                dates side by side in a header would invite reading the wrong one
-                as the departure. */}
-            <p className="text-xs text-muted-foreground">
-                Filed {formatDate(slip.date_requested)}
-            </p>
         </div>
     );
 }
@@ -323,6 +369,19 @@ function OutcomeLead({ slip }: { slip: PassSlipView }) {
     );
 }
 
+/**
+ * The display names for the two request types.
+ *
+ * The stored values are `official` and `personal`, which read as labels on a
+ * form but not in a summary: "personal" alone is ambiguous in a list of rows
+ * about people, so they are spelled out here rather than changing the stored
+ * value, which other reports and the file form both key off.
+ */
+const REQUEST_TYPE_LABELS: Record<string, string> = {
+    official: 'Official Business',
+    personal: 'Personal Business',
+};
+
 function TypeBadge({ slip }: { slip: PassSlipView }) {
     const official = slip.request_type === 'official';
 
@@ -341,7 +400,7 @@ function TypeBadge({ slip }: { slip: PassSlipView }) {
             ) : (
                 <House className="size-3" />
             )}
-            {slip.request_type}
+            {REQUEST_TYPE_LABELS[slip.request_type] ?? slip.request_type}
         </Badge>
     );
 }

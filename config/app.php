@@ -60,12 +60,18 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions.
+    |
+    | This has to match the office the records describe. `now()` feeds every
+    | timestamp the application writes - a recorded pass slip arrival, a review
+    | decision, a ledger accrual - while the date and time fields a person fills
+    | in on a form are stored as the wall-clock time they typed. With those two
+    | disagreeing, somebody arriving at 2:20 PM is stamped 6:20 AM, and every
+    | "how late was that" comparison is out by the offset.
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

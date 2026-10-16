@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react';
 import PaginationButton from '@/components/Leave/PaginationButton';
 import SelectCombobox from '@/components/Leave/SelectCombobox';
 import { ArrivalControl } from '@/components/PassSlip/ArrivalControl';
+import { ArrivalSummary } from '@/components/PassSlip/ArrivalSummary';
 import type { PassSlipView } from '@/components/PassSlip/fields';
 import { SignatoryLines, SummaryCard } from '@/components/PassSlip/SummaryCard';
 import { Badge } from '@/components/ui/badge';
@@ -344,6 +345,24 @@ export default function PassSlipReviewQueue({
                                         <TravelTimesEditor
                                             slip={row}
                                             onSave={saveTravelTimes}
+                                        />
+                                    ) : undefined
+                                }
+                                // The collapsed card's arrival readout. Only on
+                                // the decided tabs, for the same reason the strip
+                                // below is: a slip still awaiting a decision has
+                                // no return to record yet, and the footer would
+                                // only repeat the status pill back.
+                                arrivalSummaryActions={
+                                    canEditTravelTimes &&
+                                    row.status !== 'pending' ? (
+                                        <ArrivalSummary
+                                            slip={row}
+                                            canRecord
+                                            pending={processing === row.id}
+                                            onRecordArrival={() =>
+                                                recordArrival(row.id)
+                                            }
                                         />
                                     ) : undefined
                                 }
