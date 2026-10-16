@@ -1,11 +1,26 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { BriefcaseBusiness, House, Stamp } from 'lucide-react';
+import {
+    BriefcaseBusiness,
+    CalendarClock,
+    FileText,
+    House,
+    MapPin,
+    Stamp,
+    UserRound,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import SelectCombobox from '@/components/Leave/SelectCombobox';
+import { PassSlipListingCard } from '@/components/ListingCard/PassSlipListingCard';
 import { ArrivalControl } from '@/components/PassSlip/ArrivalControl';
+import {
+    DetailField,
+    formatDate,
+    formatDateTime,
+    TravelTimes,
+} from '@/components/PassSlip/fields';
 import type { PassSlipView } from '@/components/PassSlip/fields';
-import { SignatoryLines, SummaryCard } from '@/components/PassSlip/SummaryCard';
+import { SignatoryLines } from '@/components/PassSlip/SummaryCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +38,13 @@ import {
     FieldSet,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -88,6 +110,17 @@ export default function PassSlips({
      * slips" — collapsing them would hide half the history behind a click.
      */
     const [myStatusFilter, setMyStatusFilter] = useState('all');
+
+    /**
+     * The slip whose detail sheet is open, or null.
+     *
+     * Held as the slip object rather than an id because the sheet renders from
+     * props that are already in memory — no fetch, no loading state. Keeping a
+     * stale copy is safe here precisely because the sheet is opened *from* a
+     * card that was rendered from this same array, and the one mutation on this
+     * screen (withdraw) removes the slip and closes the sheet.
+     */
+    const [openSlip, setOpenSlip] = useState<MySlip | null>(null);
 
     const form = useForm({
         user_id: '' as number | '',
@@ -612,62 +645,190 @@ export default function PassSlips({
                                 filtering={myStatusFilter !== 'all'}
                             />
                         ) : (
-                            visibleSlips.map((row) => (
-                                <MySlipCard
-                                    key={row.id}
-                                    slip={row}
-                                    onWithdraw={withdraw}
-                                />
-                            ))
+                            <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                {visibleSlips.map((row) => (
+                                    <PassSlipListingCard
+                                        key={row.id}
+                                        slip={row}
+                                        onOpen={() => setOpenSlip(row)}
+                                    />
+                                ))}
+                            </div>
                         )}
                     </div>
                 )}
+
+                {/* One sheet for the whole grid rather than a panel inside each
+                    card. The cards are a summary; the full record is what you
+                    open once you have picked which slip you meant, and hosting
+                    it here keeps the grid itself free of expandable state — a
+                    card that grows pushes every card below it down the page. */}
+                <Sheet
+                    open={openSlip !== null}
+                    onOpenChange={(next) => !next && setOpenSlip(null)}
+                >
+                    <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+                        {openSlip && (
+                            <SlipDetail
+                                slip={openSlip}
+                                onWithdraw={withdraw}
+                                onClose={() => setOpenSlip(null)}
+                            />
+                        )}
+                    </SheetContent>
+                </Sheet>
             </div>
         </>
     );
 }
 
 /**
- * One of the personnel's own slips.
+ * The full record behind one card, in a side sheet.
  *
- * Leads with the outcome and the decision note, because that is what someone
- * opening "my slips" is looking for — the request they filed is the part they
- * remember. Actions sit inside the expanded card rather than on the collapsed
- * row so a stray click cannot withdraw a request.
+ * Carries everything the old expandable card carried — the outcome and decision
+ * note first, then the detail grid in the physical form's field order, the
+ * travel times, the arrival strip and the signatories. Nothing was dropped in
+ * the move to the grid; only the *placement* changed, from an inline expansion
+ * to an overlay.
+ *
+ * Outcome leads because that is what somebody opening "my slips" is looking for:
+ * the request they filed is the part they remember.
+ *
+ * Withdraw sits at the bottom, away from the card's "Open" button it was
+ * reached through — on a grid, the two are now on different screens, so the
+ * stray-click risk the old inline layout was guarding against is gone by
+ * construction rather than by spacing.
  *
  * The arrival strip is here read-only. Recording the actual arrival is HR's
  * record, not the filer's claim — but the personnel is entitled to see whether
  * anybody has confirmed they came back, and silence reads as "nobody noticed".
  */
-function MySlipCard({
+function SlipDetail({
     slip,
     onWithdraw,
+    onClose,
 }: {
     slip: MySlip;
     onWithdraw: (id: number) => void;
+    onClose: () => void;
 }) {
+    const pending = slip.status === 'pending';
+
     return (
-        <SummaryCard
-            slip={slip}
-            leading="outcome"
-            arrivalActions={<ArrivalControl slip={slip} />}
-        >
+        <div className="flex flex-col gap-5">
+            <SheetHeader>
+                <SheetTitle>{slip.destination}</SheetTitle>
+                <SheetDescription>
+                    {pending ? (
+                        <>
+                            Awaiting approval · filed{' '}
+                            {formatDate(slip.date_accomplished)}
+                        </>
+                    ) : (
+                        <>
+                            {slip.status === 'approved'
+                                ? 'Approved'
+                                : 'Declined'}
+                            {slip.reviewed_at
+                                ? ` on ${formatDate(slip.reviewed_at)}`
+                                : ''}
+                            {slip.reviewer_name
+                                ? ` by ${slip.reviewer_name}`
+                                : ''}
+                        </>
+                    )}
+                </SheetDescription>
+            </SheetHeader>
+
+            {slip.actual_arrival && (
+                <p className="text-sm text-muted-foreground">
+                    Arrived {formatDateTime(slip.actual_arrival)}
+                </p>
+            )}
+
+            {slip.review_remarks && (
+                <p className="text-sm text-muted-foreground italic">
+                    “{slip.review_remarks}”
+                </p>
+            )}
+
+            {/* The detail grid mirrors the physical form's field order, so what
+                the filer reads here is the form in the same sequence. */}
+            <div className="grid gap-4 sm:grid-cols-2">
+                <DetailField
+                    label="Date accomplished"
+                    value={formatDate(slip.date_accomplished)}
+                    icon={<Stamp className="size-3" />}
+                />
+
+                <DetailField
+                    label="Date requested"
+                    value={formatDate(slip.date_requested)}
+                    icon={<CalendarClock className="size-3" />}
+                />
+
+                <DetailField
+                    label="Destination"
+                    value={slip.destination}
+                    icon={<MapPin className="size-3" />}
+                />
+
+                <DetailField
+                    label="Personnel"
+                    value={
+                        <span className="flex flex-col">
+                            <span>{slip.printed_name ?? 'Unknown'}</span>
+                            <span className="text-xs text-muted-foreground">
+                                {[slip.position, slip.usd]
+                                    .filter(Boolean)
+                                    .join(' · ')}
+                            </span>
+                        </span>
+                    }
+                    icon={<UserRound className="size-3" />}
+                />
+            </div>
+
+            <DetailField
+                label="Purpose"
+                value={
+                    <span className="text-sm text-muted-foreground">
+                        {slip.purpose}
+                    </span>
+                }
+                icon={<FileText className="size-3" />}
+            />
+
+            <TravelTimes
+                expectedDeparture={slip.expected_departure}
+                expectedArrival={slip.expected_arrival}
+                actualArrival={slip.actual_arrival}
+            />
+
+            {/* Below the travel panel rather than inside it: the panel is the
+                record of what was filed, this is the answer to "are they back
+                yet" and deserves its own block. */}
+            <ArrivalControl slip={slip} />
+
             <SignatoryLines
                 recommendedBy={slip.recommended_by_name}
                 assignedTo={slip.assigned_to_name}
             />
 
-            {slip.status === 'pending' && (
-                <div className="flex justify-end">
+            {pending && (
+                <div className="flex justify-end border-t pt-5">
                     <Button
                         variant="outline"
-                        onClick={() => onWithdraw(slip.id)}
+                        onClick={() => {
+                            onWithdraw(slip.id);
+                            onClose();
+                        }}
                     >
                         Withdraw request
                     </Button>
                 </div>
             )}
-        </SummaryCard>
+        </div>
     );
 }
 
